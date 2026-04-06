@@ -954,6 +954,28 @@
 				}
 			)
 		}
+		kanban expense_claims_by_category
+		{
+			displayName = "Categories"
+			show all rows from expense_claims    
+			(
+				claim_id as "Claim ID"
+				department as "Department"
+				client as "Client"
+				category as "Category"
+				amount_zar as "Amount ZAR"
+				(
+					display = total,average,min,max	
+				)
+				description as "Description"
+				status as "Status"
+				gl_code as "GL Code"
+			)
+			options
+			(
+	 			display field = category
+	 		)
+		}
 		list gl_accounts_Report
 		{
 			displayName = "All Gl Accounts"
@@ -1033,6 +1055,22 @@
 				format = "color:#ffffff;background-color:#e84c3d;"
 				}
 			)
+		}
+		kanban approval_history_by_action_1
+		{
+			displayName = "Actions"
+			show all rows from approval_history    
+			(
+				claim as "Claim"
+				action_1 as "Action"
+				actor as "Actor"
+				timestamp as "Timestamp"
+				comments as "Comments"
+			)
+			options
+			(
+	 			display field = action_1
+	 		)
 		}
 		list approval_thresholds_Report
 		{
@@ -1844,6 +1882,7 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
+							expense_claims_by_category={"View","Edit","Delete"}
 						}
 						FieldPermissions
 						{
@@ -1971,6 +2010,7 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
+							expense_claims_by_category={"View","Edit","Delete"}
 						}
 					}
 				}
@@ -2039,6 +2079,7 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
+							expense_claims_by_category={"View","Edit","Delete"}
 						}
 					}
 				}
@@ -2095,6 +2136,7 @@
 						ReportPermissions
 						{
 							approval_history_Report={"View","Edit","Delete"}
+							approval_history_by_action_1={"View","Edit","Delete"}
 						}
 					}
 					expense_claims
@@ -2104,6 +2146,7 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
+							expense_claims_by_category={"View","Edit","Delete"}
 						}
 					}
 				}
@@ -2131,6 +2174,7 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit"}
+							expense_claims_by_category={"View","Edit"}
 						}
 					}
 				}
@@ -2150,6 +2194,7 @@
 						ReportPermissions
 						{
 							approval_history_Report={"View"}
+							approval_history_by_action_1={"View"}
 						}
 					}
 					expense_claims
@@ -2158,6 +2203,7 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit"}
+							expense_claims_by_category={"View","Edit"}
 						}
 					}
 				}
@@ -2338,6 +2384,92 @@
 								department_id as "Department ID"
 								name as "Name"
 								is_active as "Active"
+							)
+						)
+					)
+					menu
+    				(
+    	 				header
+    	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    	 				)
+    				)
+				)
+			}
+			report expense_claims_by_category
+			{
+				quickview
+				(
+					layout
+					(
+		 				type = 1
+						datablock1
+						(
+							layout type = 1
+							fields
+							(
+								claim_id as "Claim ID"
+							)
+						)
+					)
+					menu
+    				(
+    	 				header
+    	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    		 				Add 
+    		 				Import 
+    		 				Export 
+    	 				)
+						record
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
+    					)
+    				)
+    				action
+    				(
+						on click
+						(
+							View Record   	   
+    					)
+						on right click
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
+							View Record   	   
+    					)
+     				)
+				)
+
+				detailview
+				(
+					layout
+					(
+		 				type = 1
+						datablock1
+						(
+							layout type = -2
+							fields
+							(
+								claim_id as "Claim ID"
+								department as "Department"
+								client as "Client"
+								category as "Category"
+								amount_zar as "Amount ZAR"
+								description as "Description"
+								status as "Status"
+								gl_code as "GL Code"
 							)
 						)
 					)
@@ -2546,15 +2678,34 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    		 				Add 
+    		 				Import 
+    		 				Export 
     	 				)
 						record
 						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
+							View Record   	   
+    					)
+						on right click
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
 							View Record   	   
     					)
      				)
@@ -2600,6 +2751,94 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    	 				)
+    				)
+				)
+			}
+			report approval_history_by_action_1
+			{
+				quickview
+				(
+					layout
+					(
+		 				type = 1
+						datablock1
+						(
+							layout type = 1
+							fields
+							(
+								actor as "Actor"
+								claim as "Claim"
+							)
+						)
+					)
+					menu
+    				(
+    	 				header
+    	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    		 				Add 
+    		 				Import 
+    		 				Export 
+    	 				)
+						record
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
+    					)
+    				)
+    				action
+    				(
+						on click
+						(
+							View Record   	   
+    					)
+						on right click
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
+							View Record   	   
+    					)
+     				)
+				)
+
+				detailview
+				(
+					layout
+					(
+		 				type = 1
+						datablock1
+						(
+							layout type = -2
+							fields
+							(
+								claim as "Claim"
+								action_1 as "Action"
+								actor as "Actor"
+								timestamp as "Timestamp"
+								comments as "Comments"
+							)
+						)
+					)
+					menu
+    				(
+    	 				header
+    	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
     	 				)
     				)
 				)
@@ -2626,15 +2865,34 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    		 				Add 
+    		 				Import 
+    		 				Export 
     	 				)
 						record
 						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
+							View Record   	   
+    					)
+						on right click
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
 							View Record   	   
     					)
      				)
@@ -2661,6 +2919,10 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
     	 				)
     				)
 				)
@@ -2687,15 +2949,34 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    		 				Add 
+    		 				Import 
+    		 				Export 
     	 				)
 						record
 						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
+							View Record   	   
+    					)
+						on right click
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
 							View Record   	   
     					)
      				)
@@ -2722,6 +3003,10 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
     	 				)
     				)
 				)
@@ -2748,15 +3033,34 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
+    		 				Add 
+    		 				Import 
+    		 				Export 
     	 				)
 						record
 						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
+							View Record   	   
+    					)
+						on right click
+						(
+							Edit   	   
+							Duplicate   	   
+							Delete   	   
+							Print   	   
 							View Record   	   
     					)
      				)
@@ -2783,6 +3087,10 @@
     				(
     	 				header
     	 				(
+    		 				Edit 
+    		 				Duplicate 
+    		 				Delete 
+    		 				Print 
     	 				)
     				)
 				)
@@ -3081,6 +3389,10 @@
 					{
 						icon = "travel-world"
 					}
+					report expense_claims_by_category
+					{
+						icon = "design-2-selection"
+					}
 					report My_Claims
 					{
 						icon = "business-currency-dollar"
@@ -3123,6 +3435,10 @@
 					report approval_history_Report
 					{
 						icon = "travel-world"
+					}
+					report approval_history_by_action_1
+					{
+						icon = "media-1-action-74"
 					}
 					report Audit_Trail
 					{
