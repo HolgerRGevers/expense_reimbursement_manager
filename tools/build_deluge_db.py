@@ -462,6 +462,13 @@ def populate_banned_patterns(cur: sqlite3.Cursor) -> None:
         ("zoho.loginuserrole", "variable",
          "zoho.loginuserrole does NOT exist. Use thisapp.permissions.isUserInRole().", "ERROR"),
     ]
+    # Discovery log entries (runtime-discovered constraints)
+    cur.execute(
+        "INSERT OR REPLACE INTO error_messages VALUES (?, ?, ?, ?)",
+        ("Added_User only accepts zoho.loginuser or zoho.adminuser", "save",
+         "Used zoho.adminuserid (email) in Added_User field",
+         "Change to zoho.adminuser (username) or zoho.loginuser. See DL-001."),
+    )
     cur.executemany("INSERT OR REPLACE INTO banned_patterns VALUES (?, ?, ?, ?)", rows)
 
 

@@ -30,6 +30,7 @@ No CI/CD — Creator has no structural deployment API. Code is applied manually 
 - GL query always needs null guard: `glRec != null && glRec.count() > 0`
 - Strings use double quotes only (never single quotes)
 - `ifnull(value, fallback)` for every query result
+- `Added_User` in insert tasks ONLY accepts `zoho.loginuser` or `zoho.adminuser` (NOT `zoho.adminuserid`)
 
 ## Tooling workflow
 After editing any .dg file:

@@ -1394,7 +1394,7 @@
 													actor="SYSTEM"
 													timestamp=zoho.currenttime
 													comments="LM did not act within 2 business days."
-													Added_User=zoho.adminuserid
+													Added_User=zoho.adminuser
 												];
 												sendmail
 												[

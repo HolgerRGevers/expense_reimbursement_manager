@@ -1,6 +1,6 @@
 /*
  * Author       : holger.gevers
- * Generated on : 06-Apr-2026 14:32:34
+ * Generated on : 06-Apr-2026 14:54:40
  * Version      : 1.0
  */
  application "Expense Reimbursement Management"
@@ -144,6 +144,15 @@
 			(
     			type = checkbox
 				initial value = true
+	 			row = 1
+	 			column = 1   
+				width = medium
+			)
+			Tier_Order
+			(
+				type = number
+				displayname = "Tier Order"
+				initial value = 0
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -487,6 +496,29 @@
 	 			column = 1   
 				width = medium
 			)
+			VAT_Invoice_Type
+			(
+				type = picklist
+				displayname = "VAT Invoice Type"
+				values = {"None","Abbreviated (< R5,000)","Full Tax Invoice (>= R5,000)"}
+	 			row = 1
+	 			column = 1   
+				width = medium
+			)
+			POPIA_Consent
+			(
+    			type = checkbox
+				displayname = "POPIA Consent"
+				initial value = false
+    			description
+    			[
+    				type = help_text
+    			 	message = "I consent to the processing of my personal data for expense reimbursement purposes in accordance with POPIA."
+    			]
+	 			row = 1
+	 			column = 1   
+				width = medium
+			)
 			status
 			(
 				type = picklist
@@ -509,6 +541,21 @@
 			(
 				type = number
 				initial value = 1
+	 			row = 1
+	 			column = 1   
+				width = medium
+			)
+			Retention_Expiry_Date
+			(
+    			type = date
+				displayname = "Retention Expiry Date"
+				alloweddays = 0,1,2,3,4,5,6
+    			description
+    			[
+    				type = help_text
+    			 	message = "SARS Tax Administration Act S29: 5-year retention from submission date."
+    			]
+				private = true
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -621,6 +668,21 @@
     			[
     				type = help_text
     			 	message = "Maps each GL code to SARS deduction provision, e.g. \"S11(a) + S8(1)(a)\". Used in compliance reporting."
+    			]
+	 			row = 1
+	 			column = 1   
+				width = medium
+			)
+			Risk_Level
+			(
+				type = picklist
+				displayname = "Risk Level"
+				values = {"Standard","Elevated","High"}
+				initial value = "Standard"
+    			description
+    			[
+    				type = help_text
+    			 	message = "ISO 37001: Categories prone to bribery risk receive enhanced scrutiny."
     			]
 	 			row = 1
 	 			column = 1   
@@ -1253,9 +1315,28 @@
 											alert "At least one supporting document (receipt/invoice) is required.";
 											cancel submit;
 										}
-										// 5. All validations pass
+										// 5. Duplicate claim detection (COSO fraud risk)
+										duplicates = expense_claims[Expense_Date == input.Expense_Date && amount_zar == input.amount_zar && Added_User == zoho.loginuser && ID != input.ID];
+										if(duplicates != null && duplicates.count() > 0)
+										{
+											alert "Potential duplicate claim detected: same date, amount, and submitter already exists. Please verify this is not a duplicate.";
+										}
+										// 6. VAT invoice type enforcement (SARS)
+										if(input.amount_zar >= 5000 && input.VAT_Invoice_Type != "Full Tax Invoice (>= R5,000)")
+										{
+											alert "Claims of R5,000 or more require a Full Tax Invoice. Please update the VAT Invoice Type.";
+											cancel submit;
+										}
+										// 7. POPIA consent (mandatory)
+										if(input.POPIA_Consent == false)
+										{
+											alert "You must provide POPIA consent before submitting an expense claim.";
+											cancel submit;
+										}
+										// 8. All validations pass
 										input.status = "Submitted";
 										input.Submission_Date = zoho.currenttime;
+										input.Retention_Expiry_Date = input.Submission_Date.addYear(5);
 						)
 					}
 				}
@@ -1314,7 +1395,7 @@
 													actor="SYSTEM"
 													timestamp=zoho.currenttime
 													comments="LM did not act within 2 business days."
-													Added_User=zoho.loginuser
+													Added_User=zoho.adminuser
 												];
 												sendmail
 												[
@@ -1347,7 +1428,7 @@
 			Line_Manager_Approval as "Line Manager Approval"
 			{
 				type =  approval
-				form = expense_claims[Parent_Claim_ID.status == "Pending LM Approval"]
+				form = expense_claims[status == "Pending LM Approval"]
 				display fields = [Employee_Name1,Email,Submission_Date,claim_id,Claim_Reference,Expense_Date,department]
 				on start
 				{
@@ -1622,25 +1703,28 @@
 						FieldPermissions
 						{
 							Email{visibility:true,readonly:true}
-							Employee_Name1{visibility:true,readonly:true}
-							Department_Shadow{visibility:false,readonly:false}
 							ZC_Record_Type{visibility:false}
-							Claim_Reference{visibility:false,readonly:false}
+							Employee_Name1{visibility:true,readonly:true}
 							claim_id{visibility:true,readonly:true}
+							POPIA_Consent{visibility:false,readonly:false}
 							description{visibility:true,readonly:true}
-							Expense_Date{visibility:false,readonly:false}
-							Section{visibility:false,readonly:false}
 							gl_code{visibility:true,readonly:true}
 							amount_zar{visibility:true,readonly:true}
 							Submission_Date{visibility:true,readonly:true}
 							Version{visibility:true,readonly:true}
+							client{visibility:true,readonly:true}
+							Supporting_Documents{visibility:true,readonly:true}
+							department{visibility:true,readonly:true}
+							Department_Shadow{visibility:false,readonly:false}
+							Claim_Reference{visibility:false,readonly:false}
+							Expense_Date{visibility:false,readonly:false}
+							VAT_Invoice_Type{visibility:false,readonly:false}
+							Section{visibility:false,readonly:false}
+							Retention_Expiry_Date{visibility:false,readonly:false}
 							Rejection_Reason{visibility:true,readonly:false}
 							Client_Shadow{visibility:false,readonly:false}
 							Parent_Claim_ID{visibility:true,readonly:true}
-							client{visibility:true,readonly:true}
-							Supporting_Documents{visibility:true,readonly:true}
 							category{visibility:true,readonly:true}
-							department{visibility:true,readonly:true}
 							status{visibility:true,readonly:true}
 						}
 					}
@@ -1669,9 +1753,10 @@
 					{
 						FieldPermissions
 						{
+							Risk_Level{visibility:false,readonly:false}
 							gl_code{visibility:true,readonly:true}
-							receipt_required{visibility:true,readonly:false}
 							Active{visibility:true,readonly:false}
+							receipt_required{visibility:true,readonly:false}
 							ZC_Record_Type{visibility:false}
 							SARS_Provision{visibility:true,readonly:true}
 							expense_category{visibility:true,readonly:false}
@@ -1696,25 +1781,28 @@
 						FieldPermissions
 						{
 							Email{visibility:true,readonly:true}
-							Employee_Name1{visibility:true,readonly:true}
-							Department_Shadow{visibility:false,readonly:false}
 							ZC_Record_Type{visibility:false}
-							Claim_Reference{visibility:false,readonly:false}
+							Employee_Name1{visibility:true,readonly:true}
 							claim_id{visibility:true,readonly:true}
+							POPIA_Consent{visibility:false,readonly:false}
 							description{visibility:true,readonly:false}
-							Expense_Date{visibility:false,readonly:false}
-							Section{visibility:false,readonly:false}
 							gl_code{visibility:true,readonly:true}
 							amount_zar{visibility:true,readonly:false}
 							Submission_Date{visibility:true,readonly:true}
 							Version{visibility:true,readonly:true}
+							client{visibility:true,readonly:false}
+							Supporting_Documents{visibility:true,readonly:false}
+							department{visibility:true,readonly:false}
+							Department_Shadow{visibility:false,readonly:false}
+							Claim_Reference{visibility:false,readonly:false}
+							Expense_Date{visibility:false,readonly:false}
+							VAT_Invoice_Type{visibility:false,readonly:false}
+							Section{visibility:false,readonly:false}
+							Retention_Expiry_Date{visibility:false,readonly:false}
 							Rejection_Reason{visibility:true,readonly:true}
 							Client_Shadow{visibility:false,readonly:false}
 							Parent_Claim_ID{visibility:true,readonly:true}
-							client{visibility:true,readonly:false}
-							Supporting_Documents{visibility:true,readonly:false}
 							category{visibility:true,readonly:false}
-							department{visibility:true,readonly:false}
 							status{visibility:true,readonly:true}
 						}
 					}
@@ -3381,7 +3469,7 @@
 	reports configuration
 	{
 	
-		Version = 1251000334944064
-		Key     = "v6xv3hQy4gth7XQaMreQxUAGj6uvpzw6rBQgAgG8X27g1SRRDSCNfEFaY3qZq1vztpZ8SAz3fp7j1kFzM4ET52J0aRUN4y2CyYWk"
+		Version = 1251000334944073
+		Key     = "5DEDs6HWUYfefDFxkm0waAaZzxTYm9qhZxpeWuFM2uHERPv5NdhB3Tr14EtRtmsSAaHHK5V401gn3aYwms31Cw0FaFFdgKBVu3Op"
 	}
 }

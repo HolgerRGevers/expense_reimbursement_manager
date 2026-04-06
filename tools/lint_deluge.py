@@ -489,6 +489,17 @@ def check_dg018(
     return diags
 
 
+def check_dg019(filename: str, line: str, lineno: int) -> list[Diagnostic]:
+    """DG019: Added_User with zoho.adminuserid (must be zoho.adminuser or zoho.loginuser)."""
+    if re.search(r"\bAdded_User\s*=\s*zoho\.adminuserid\b", line):
+        return [Diagnostic(
+            filename, lineno, Severity.ERROR, "DG019",
+            "Added_User only accepts zoho.loginuser or zoho.adminuser. "
+            "zoho.adminuserid (email) is rejected by Creator. See discovery-log.md DL-001.",
+        )]
+    return []
+
+
 def run_line_rules(
     db: DelugeDB, filename: str, lines: list[str], file_type: FileType,
 ) -> list[Diagnostic]:
@@ -510,6 +521,7 @@ def run_line_rules(
         diags.extend(check_dg015_016(filename, line, lineno))
         diags.extend(check_dg017(db, filename, line, lineno))
         diags.extend(check_dg018(db, filename, line, lineno))
+        diags.extend(check_dg019(filename, line, lineno))
 
     return diags
 
@@ -530,7 +542,7 @@ def check_dg006(filename: str, block: Block) -> list[Diagnostic]:
     return []
 
 
-VALID_ADDED_USER_VALUES = {"zoho.loginuser", "zoho.adminuserid"}
+VALID_ADDED_USER_VALUES = {"zoho.loginuser", "zoho.adminuser"}
 
 
 def check_dg007(filename: str, block: Block) -> list[Diagnostic]:
@@ -542,7 +554,7 @@ def check_dg007(filename: str, block: Block) -> list[Diagnostic]:
         if val not in VALID_ADDED_USER_VALUES:
             return [Diagnostic(
                 filename, block.fields["Added_User"].line, Severity.ERROR, "DG007",
-                f"Added_User must be 'zoho.loginuser' (or 'zoho.adminuserid' for scheduled tasks), got '{val}'.",
+                f"Added_User must be 'zoho.loginuser' (or 'zoho.adminuser' for scheduled tasks), got '{val}'.",
             )]
     return []
 
