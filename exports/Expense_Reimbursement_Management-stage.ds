@@ -2733,34 +2733,14 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    		 				Add 
-    		 				Import 
-    		 				Export 
     	 				)
-						record
 						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
 							View Record   	   
     					)
      				)
@@ -2787,10 +2767,6 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
     	 				)
     				)
 				)
