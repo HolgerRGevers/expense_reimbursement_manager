@@ -3,96 +3,88 @@
 ## Purpose
 Test whether directly editing a Zoho Creator `.ds` export file and re-importing it into a separate Creator account produces a working application with the intended changes.
 
-## Result Summary
+## Final Result
 
-**Import: SUCCESS** -- Creator accepted the modified .ds file without errors.
-**Edits: ALL REVERTED** -- Creator silently reverted all 4 edits on import.
+**ALL EDIT TYPES PERSIST THROUGH .DS IMPORT.**
 
-This is a significant finding: **the .ds import pipeline normalises/resets field attributes and share_settings to Creator's internal defaults.** Direct .ds editing is NOT a viable path for structural or permission changes.
+Round 1 used an incorrect file (likely the wrong branch or the root-level unedited copy). Round 3 reran from a verified baseline and confirmed that structural, permission, and script edits all survive Creator import.
 
-## Edits Made (on branch `ds-edit-experiment`)
+---
 
-### Edit 1: G-08 -- receipt_required default
-- **Change**: `initial value = false` -> `initial value = true`
-- **Risk**: Very Low
+## Round 1: Structural + Permission Edits (INVALID -- wrong file used)
 
-### Edit 2: G-13 -- Remove gl_code "allow new entries"
-- **Change**: Removed 4-line `allow new entries` block
-- **Risk**: Low
-
-### Edit 3: G-14 -- Remove client "allow new entries"
-- **Change**: Removed 4-line `allow new entries` block
-- **Risk**: Low
-
-### Edit 4: G-07 -- LM status field readonly
-- **Change**: `readonly:false` -> `readonly:true` in Line Manager share_settings
-- **Risk**: Low edit, critical governance fix
-
-## Results
-
-| Edit | Import Status | Persisted After Re-export? | Notes |
-|------|--------------|---------------------------|-------|
-| G-08 receipt default | Accepted | **NO** -- reverted to `initial value = false` | Creator resets field defaults on import |
-| G-13 gl_code entries | Accepted | **NO** -- `allow new entries` re-added | Creator re-adds lookup "Add New" on import |
-| G-14 client entries | Accepted | **NO** -- `allow new entries` re-added | Same behaviour as G-13 |
-| G-07 LM status readonly | Accepted | **NO** -- reverted to `readonly:false` | Creator resets share_settings permissions on import |
-
-## Lessons Learned
-
-### What works
-1. Creator accepts modified .ds files without import errors
-2. The .ds format is syntactically tolerant of edits (no checksum/hash validation)
-3. The upload-import pipeline does not reject files with missing blocks
-
-### What does NOT work
-1. **Field attribute changes** (defaults, allow new entries) are reset by Creator's import normalisation
-2. **Permission/share_settings changes** are reverted to Creator's internal state
-3. Creator treats the .ds import as a **structural scaffold** -- it rebuilds field properties and permissions from its own metadata, ignoring .ds overrides
-
-### Implications for the Governance Remediation Plan
-- **All 16 gaps must be fixed in the Creator UI**, not via .ds file edits
-- The .ds file remains useful for:
-  - Version archiving (read-only reference)
-  - Disaster recovery (full app rebuild on fresh account)
-  - Script extraction (Deluge code IS preserved -- verified by working workflows)
-- For script changes: edit `.dg` files in this repo, paste into Creator UI
-- For structural changes (fields, permissions, defaults): must be done in Creator Settings
+Round 1 results were incorrect. The test file uploaded to Creator was likely the unedited original, not the modified version. This was discovered when Round 3 repeated the same edits with a verified file and all changes persisted.
 
 ---
 
 ## Round 2: Deluge Script Edit
 
-### Edit 5: Claim Reference Prefix
+### Edit: Claim Reference Prefix
 **What**: Changed `"EXP-"` to `"EXP2-"` in Generate_Claim_Reference workflow script
-**Line**: 1085 in .ds (inside `custom deluge script ( ... )` block)
-**Risk**: Zero -- cosmetic string change on test account
-
-### Round 2 Results
+**Line**: 1085 in .ds
 
 | Edit | Import Status | Persisted? | Verification |
 |------|--------------|------------|-------------|
 | EXP- to EXP2- | Accepted | **YES** | Zoho re-export line 1085: `claim_reference = "EXP2-" + padded;` |
 
-### Round 2 Conclusion
+**Conclusion**: Deluge script edits persist.
 
-**Deluge script edits PERSIST through .ds import.** Creator faithfully ingests embedded code blocks.
+---
 
-This means:
-- **Structural changes** (field defaults, permissions, allow-new-entries): REVERTED on import -- must use Creator UI
-- **Deluge script code**: PRESERVED on import -- can be deployed via .ds file
+## Round 3: Structural + Permission Edits (RERUN -- clean baseline)
 
-### Revised Deployment Model
+Reran Round 1 edits from a verified clean main baseline. Confirmed correct file was used by checking `allow new entries` count before upload (1 in edited, 3 in original).
 
-| Change type | Deploy via .ds? | Deploy via Creator UI? |
-|-------------|----------------|----------------------|
-| Field attribute changes | NO | YES |
-| Permission / share_settings | NO | YES |
-| New fields | UNCERTAIN (not tested) | YES |
-| Deluge workflow scripts | **YES** | YES |
-| Approval process scripts | **LIKELY YES** (same format, not yet tested) | YES |
-| Scheduled task scripts | **LIKELY YES** (same format, not yet tested) | YES |
+### Edits Applied
+1. **G-08**: `receipt_required` default changed from `false` to `true`
+2. **G-13**: Removed `allow new entries` from gl_code lookup field (4 lines deleted)
+3. **G-14**: Removed `allow new entries` from client lookup field (4 lines deleted)
+4. **G-07**: LM status field changed from `readonly:false` to `readonly:true`
 
-### What this unlocks
-1. We can edit .dg files in this repo, sync them into the .ds, and import to Creator
-2. The `parse_ds_export.py` tool can be extended to **inject** .dg scripts back into .ds files
-3. This is a viable path toward semi-automated Deluge deployment -- the OmegaScript vision's edit-apply workflow becomes practical for script changes
+### Round 3 Results
+
+| Edit | Import Status | Persisted After Re-export? | Verification |
+|------|--------------|---------------------------|-------|
+| G-08 receipt default | Accepted | **YES** -- `initial value = true` | Confirmed in re-export |
+| G-13 gl_code entries | Accepted | **YES** -- `allow new entries` removed | Count: 1 (only approval_history.claim) |
+| G-14 client entries | Accepted | **YES** -- `allow new entries` removed | Same count confirms both removed |
+| G-07 LM status readonly | Accepted | **YES** -- `readonly:true` | Both status lines show readonly:true |
+
+---
+
+## Combined Findings
+
+### What works via .ds edit + import
+
+| Change type | Persists? | Tested |
+|-------------|-----------|--------|
+| Field defaults (initial value) | **YES** | Round 3 |
+| Field attributes (allow new entries) | **YES** | Round 3 |
+| Permission / share_settings (readonly) | **YES** | Round 3 |
+| Deluge workflow scripts | **YES** | Round 2 |
+| Approval process scripts | LIKELY YES | Not yet tested (same format as workflow scripts) |
+| New fields / form changes | UNCERTAIN | Not tested |
+
+### Implications
+
+1. **The .ds file IS a viable deployment mechanism** for most changes
+2. We can edit .dg scripts in this repo, inject into .ds, and import to Creator
+3. Structural governance fixes (permissions, field controls) can also be deployed via .ds
+4. This unlocks semi-automated deployment -- the OmegaScript vision becomes practical
+5. The `parse_ds_export.py` tool should be extended with an **inject** mode to sync .dg files back into .ds
+
+### Deployment Workflow (validated)
+
+```
+1. Edit .dg files in repo (scripts)
+2. Edit .ds file for structural changes (permissions, field attributes)
+3. Run linter: python tools/lint_deluge.py src/deluge/
+4. Import modified .ds into Creator
+5. Export .ds from Creator for version archive
+6. Commit updated .ds to repo
+```
+
+### What to test next
+- Adding a NEW field to a form via .ds (does Creator create it on import?)
+- Modifying approval process trigger conditions via .ds
+- Whether data (existing records) survives import with structural changes

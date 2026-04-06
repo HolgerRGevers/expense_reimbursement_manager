@@ -1,6 +1,6 @@
 /*
  * Author       : holger.gevers
- * Generated on : 06-Apr-2026 14:16:21
+ * Generated on : 06-Apr-2026 14:32:34
  * Version      : 1.0
  */
  application "Expense Reimbursement Management"
@@ -418,10 +418,6 @@
 				displayname = "Client"
 				values  = clients.ID
     			displayformat = [" - " + name]
-				allow new entries
-				[
-					displayname = "Add New"
-				]
 				sortorder = ascending
 				height = 60px
 	 			row = 1
@@ -535,10 +531,6 @@
 				displayname = "GL Code"
 				values  = gl_accounts.ID
     			displayformat = [gl_code]
-				allow new entries
-				[
-					displayname = "Add New"
-				]
 				sortorder = ascending
 				height = 13px
 	 			row = 1
@@ -616,7 +608,7 @@
 			(
     			type = checkbox
 				displayname = "Receipt Required"
-				initial value = false
+				initial value = true
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -1082,7 +1074,7 @@
 						(
 											num = input.claim_id.toString();
 										padded = ("0000" + num).right(4);
-										claim_reference = "EXP2-" + padded;
+										claim_reference = "EXP-" + padded;
 						)
 					}
 				}
@@ -1629,10 +1621,10 @@
 						}
 						FieldPermissions
 						{
-							Department_Shadow{visibility:false,readonly:false}
-							ZC_Record_Type{visibility:false}
 							Email{visibility:true,readonly:true}
 							Employee_Name1{visibility:true,readonly:true}
+							Department_Shadow{visibility:false,readonly:false}
+							ZC_Record_Type{visibility:false}
 							Claim_Reference{visibility:false,readonly:false}
 							claim_id{visibility:true,readonly:true}
 							description{visibility:true,readonly:true}
@@ -1640,8 +1632,8 @@
 							Section{visibility:false,readonly:false}
 							gl_code{visibility:true,readonly:true}
 							amount_zar{visibility:true,readonly:true}
-							Version{visibility:true,readonly:true}
 							Submission_Date{visibility:true,readonly:true}
+							Version{visibility:true,readonly:true}
 							Rejection_Reason{visibility:true,readonly:false}
 							Client_Shadow{visibility:false,readonly:false}
 							Parent_Claim_ID{visibility:true,readonly:true}
@@ -1649,7 +1641,7 @@
 							Supporting_Documents{visibility:true,readonly:true}
 							category{visibility:true,readonly:true}
 							department{visibility:true,readonly:true}
-							status{visibility:true,readonly:false}
+							status{visibility:true,readonly:true}
 						}
 					}
 				}
@@ -1703,10 +1695,10 @@
 					{
 						FieldPermissions
 						{
-							Department_Shadow{visibility:false,readonly:false}
-							ZC_Record_Type{visibility:false}
 							Email{visibility:true,readonly:true}
 							Employee_Name1{visibility:true,readonly:true}
+							Department_Shadow{visibility:false,readonly:false}
+							ZC_Record_Type{visibility:false}
 							Claim_Reference{visibility:false,readonly:false}
 							claim_id{visibility:true,readonly:true}
 							description{visibility:true,readonly:false}
@@ -1714,8 +1706,8 @@
 							Section{visibility:false,readonly:false}
 							gl_code{visibility:true,readonly:true}
 							amount_zar{visibility:true,readonly:false}
-							Version{visibility:true,readonly:true}
 							Submission_Date{visibility:true,readonly:true}
+							Version{visibility:true,readonly:true}
 							Rejection_Reason{visibility:true,readonly:true}
 							Client_Shadow{visibility:false,readonly:false}
 							Parent_Claim_ID{visibility:true,readonly:true}
@@ -3389,7 +3381,7 @@
 	reports configuration
 	{
 	
-		Version = 1251000334944055
-		Key     = "k53sTmrn4NDgXzkBqfxkFWBxzX8G2AWzztey39CTDyWUxRuhbUmgxhXXxfDjTkJ6y2OHXwWTZ9bXqqtw8KyzzBU4zHUf9G4emj91"
+		Version = 1251000334944064
+		Key     = "v6xv3hQy4gth7XQaMreQxUAGj6uvpzw6rBQgAgG8X27g1SRRDSCNfEFaY3qZq1vztpZ8SAz3fp7j1kFzM4ET52J0aRUN4y2CyYWk"
 	}
 }
