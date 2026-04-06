@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-04-06
+
+### Changed
+- Rewrote linter with Pylance-compliant type annotations (`from __future__ import annotations`, enums, `str | None`)
+- Refactored linter to use SQLite-backed lookups instead of hardcoded constants
+- Added `tools/build_deluge_db.py` — builds `deluge_lang.db` with 232 functions, 42 form fields, 11 zoho variables, 20 operators, 15 error messages, 11 data types, banned patterns, and all valid values
+
+### Added
+- DG017: Reserved word used as variable name (true, false, null, void, return)
+- DG018: Unknown zoho system variable validation (zoho.X against known set)
+- invokeUrl block extraction and required-param validation (DG010)
+- SQLite database schema with 11 tables for Deluge language data
+
 ## [0.2.0] - 2026-04-06
 
 ### Added

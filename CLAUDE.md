@@ -27,6 +27,11 @@ python tools/lint_deluge.py src/deluge/
 Exit 0 = clean. Exit 1 = warnings. Exit 2 = errors (must fix before proceeding).
 If errors found: fix them iteratively and re-run until clean, then ask the user what to do next.
 
+If the linter DB is missing, rebuild it:
+```
+python tools/build_deluge_db.py
+```
+
 ## Repo structure convention
 - `src/deluge/` — scripts organised by Creator UI location (form-workflows, approval-scripts, scheduled)
 - `docs/` — architecture, compliance, build-guide, testing

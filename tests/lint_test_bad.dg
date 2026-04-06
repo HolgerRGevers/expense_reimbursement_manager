@@ -1,6 +1,6 @@
 // ============================================================
 // Test fixture: intentional violations of every lint rule.
-// Expected: all DG001-DG016 codes should fire.
+// Expected: all DG001-DG018 codes should fire.
 // Run: python tools/lint_deluge.py tests/lint_test_bad.dg
 // ============================================================
 
@@ -102,3 +102,9 @@ row = insert into approval_history
     comments = "Wrong Added_User"
     Added_User = zoho.loginuserid
 ];
+
+// DG017: Reserved word as variable name
+return = 42;
+
+// DG018: Unknown zoho system variable
+badVar = zoho.nonexistent;

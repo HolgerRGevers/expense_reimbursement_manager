@@ -22,6 +22,9 @@ venv/
 # Zoho Creator exports (tracked manually, not auto-committed)
 # Uncomment to exclude: exports/*.ds
 
+# Generated databases (rebuild with: python tools/build_deluge_db.py)
+tools/deluge_lang.db
+
 # Build artifacts
 dist/
 build/
