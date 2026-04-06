@@ -1,0 +1,65 @@
+# Field Descriptions (Help Text)
+# Source of truth for all field hover/tooltip text across all forms.
+# Applied to .ds exports via: python tools/ds_editor.py --add-descriptions
+#
+# Rules:
+#   - Every user-facing field MUST have a description
+#   - Private/system fields (Department_Shadow, Client_Shadow, Parent_Claim_ID) are excluded
+#   - Descriptions should explain: purpose, format, compliance context
+#   - Keep under 120 characters where possible
+
+expense_claims:
+  Employee_Name1: "Your full name as registered in the system. Auto-populated on form load."
+  Email: "Notification routing target."
+  Submission_Date: "Date and time the claim was submitted. Set automatically."
+  claim_id: "System-generated unique claim number. Used for tracking and reference."
+  department: "Select your department. Used for reporting and approval routing."
+  Claim_Reference: "Auto-generated reference (EXP-0001 format). Use this when communicating about the claim."
+  client: "Select the client this expense relates to. Choose Internal for non-client expenses."
+  Expense_Date: "Date the expense was incurred. Cannot be in the future or older than 90 days."
+  category: "Select the expense category. Determines GL code mapping and VAT requirements."
+  amount_zar: "Total expense amount in South African Rand (ZAR). Must be greater than zero."
+  Supporting_Documents: "Upload receipts or invoices. Required by SARS S11(a) for all claims. Max 10 files."
+  description: "Describe the business purpose of this expense. Required for SARS S11(a) substantiation."
+  VAT_Invoice_Type: "Select invoice type. Claims >= R5,000 require a Full Tax Invoice per SARS VAT rules."
+  POPIA_Consent: "I consent to the processing of my personal data for expense reimbursement purposes in accordance with POPIA."
+  status: "Current claim status. Updated automatically by the approval workflow."
+  Rejection_Reason: "Reason for rejection, provided by the approver. Read-only for employees."
+  Version: "Claim version number. Incremented each time the claim is resubmitted after rejection."
+  gl_code: "General Ledger code assigned during approval. Maps the expense to the correct account."
+  Retention_Expiry_Date: "SARS Tax Administration Act S29: 5-year retention from submission date."
+  # Private fields (no description needed):
+  # Department_Shadow, Client_Shadow, Parent_Claim_ID
+
+approval_history:
+  claim: "The expense claim this audit record relates to."
+  action_1: "The action taken: Submitted, Approved (LM/HoD), Rejected, Escalated, or Resubmitted."
+  actor: "The person or system that performed the action."
+  timestamp: "Date and time the action was recorded."
+  comments: "Details about the action, including amounts, GL codes, or rejection reasons."
+
+approval_thresholds:
+  tier_name: "Name of the approval tier (e.g., Tier 1 - Line Manager)."
+  max_amount_zar: "Maximum claim amount (ZAR) this tier can approve. Claims above this escalate to the next tier."
+  approver_role: "The Zoho Creator role that approves claims at this tier."
+  Tier_Order: "Numeric order of this tier in the escalation chain. Lower numbers approve first."
+  Active: "Whether this threshold tier is currently active in the approval workflow."
+
+gl_accounts:
+  gl_code: "The General Ledger account code (e.g., 6200). Must match your accounting system."
+  account_name: "Descriptive name for this GL account (e.g., Travel - Local Transport)."
+  expense_category: "The expense category this GL code maps to. Used for auto-assignment during approval."
+  receipt_required: "Whether a receipt/invoice is required for expenses in this category. Default: Yes (SARS S11(a))."
+  SARS_Provision: "Maps each GL code to SARS deduction provision, e.g. S11(a) + S8(1)(a). Used in compliance reporting."
+  Risk_Level: "ISO 37001: Categories prone to bribery risk receive enhanced scrutiny."
+  Active: "Whether this GL code is currently available for assignment."
+
+departments:
+  department_id: "Auto-generated department identifier."
+  name: "Department name as it appears in dropdown selections."
+  is_active: "Whether this department is currently active and available for selection."
+
+clients:
+  client_id: "Auto-generated client identifier."
+  name: "Client name as it appears in dropdown selections."
+  is_active: "Whether this client is currently active and available for selection."

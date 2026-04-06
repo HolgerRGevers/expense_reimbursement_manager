@@ -57,6 +57,21 @@ If the linter DB is missing, rebuild it:
 python tools/build_deluge_db.py
 ```
 
+For UI/accessibility changes to .ds files:
+```
+python tools/ds_editor.py audit exports/FILE.ds                              # check current state
+python tools/ds_editor.py add-descriptions exports/FILE.ds                   # from config/field-descriptions.yaml
+python tools/ds_editor.py remove-reports exports/FILE.ds --reports name1,name2
+python tools/ds_editor.py restrict-menus exports/FILE.ds --reports name1,name2
+```
+
+## UI standards
+- Every user-facing field MUST have help text (see config/field-descriptions.yaml)
+- Reference/audit reports: view-only menus (no Edit/Delete/Duplicate)
+- Remove Launchpad boilerplate kanbans that duplicate list reports
+- Conditional formatting must communicate governance state, not decoration
+- See config/ui-standards.md for full guidelines
+
 ## Repo structure convention
 - `src/deluge/` — scripts organised by Creator UI location (form-workflows, approval-scripts, scheduled)
 - `docs/` — architecture, compliance, build-guide, testing
