@@ -34,12 +34,10 @@ if (input.amount_zar <= thresholdAmount)
     input.status = "Approved";
 
     // GL code auto-population
-    glCode = "";
     glRec = gl_accounts[expense_category == input.category && Active == true];
     if (glRec != null && glRec.count() > 0)
     {
-        glCode = glRec.gl_code;
-        input.gl_code = glCode;
+        input.gl_code = glRec.gl_code;
     }
 
     row = insert into approval_history
@@ -48,7 +46,7 @@ if (input.amount_zar <= thresholdAmount)
         action_1 = "Approved (LM)"
         actor = zoho.loginuser
         timestamp = zoho.currenttime
-        comments = "Line Manager final approval. GL: " + ifnull(glCode, "UNMAPPED")
+        comments = "Line Manager final approval. GL: " + ifnull(input.gl_code, "UNMAPPED")
         Added_User = zoho.loginuser
     ];
 

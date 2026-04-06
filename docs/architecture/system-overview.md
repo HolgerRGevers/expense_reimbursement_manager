@@ -40,9 +40,10 @@ The Expense Reimbursement Manager is a Zoho Creator application that digitises t
 |  - Expense Summary          |
 |  - Standard CRUD reports    |
 |-----------------------------|
-|  PAGES                      |
+|  PAGES (3)                  |
 |  - Dashboard                |
 |  - Employee Dashboard       |
+|  - Management Dashboard     |
 +-----------------------------+
 ```
 

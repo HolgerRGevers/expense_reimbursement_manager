@@ -1,6 +1,6 @@
 /*
  * Author       : holger.gevers360
- * Generated on : 06-Apr-2026 04:25:06
+ * Generated on : 06-Apr-2026 13:04:52
  * Version      : 1.0
  */
  application "Expense Reimbursement Management"
@@ -872,15 +872,14 @@
 			show all rows from approval_history    
 			(
 				claim as "Claim"
+				(
+					delimiter = comma
+				)
 				action_1 as "Action"
 				actor as "Actor"
 				timestamp as "Timestamp"
 				comments as "Comments"
-			)
-			group by
-			(
-				action_1 ascending
-				actor ascending
+				claim.claim_id as "Claim ID"
 			)
 			sort by
 			(
@@ -1055,6 +1054,11 @@
 		{
 			displayname = "Employee Dashboard"
 			Content="<zml    \t\t\n\t\t\n\t\t\n\t\t\twebDeviceConfig='{\"layout\":{\"displayType\":\"card\",\"design\":\"fluid\",\"style\":\"padding-right:0px;padding-top:0px;padding-bottom:0px;padding-left:0px;\"}}'\n\t\t\n\t\t\n>\n\t<layout>\n\t<row>\n\t<column\n   \t\t width='100%'\n   \t>\n\t<dspZml id='zml_snippet1' elementName='My Expense Dashboard'\n>\n\t<![CDATA[htmlpage zml_snippet1()\ncontent\n&lt;%{\n\t%&gt;\n&lt;panel elementName=&apos;Header_Panel&apos;&gt;\n&lt;pr width=&apos;fill&apos; height=&apos;fill&apos;&gt;\n&lt;pc\n\tpadding = &apos;24px&apos;\n\tbgColor = &apos;#5A3D9B&apos;\n\twidth = &apos;100%&apos;\n\thAlign = &apos;left&apos;\n\tvAlign = &apos;middle&apos;\n&gt;\n&lt;pr width=&apos;auto&apos; height=&apos;auto&apos;&gt;\n&lt;pc\n\twidth = &apos;55%&apos;\n\thAlign = &apos;left&apos;\n\tvAlign = &apos;middle&apos;\n&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tcolor = &apos;#FFFFFF&apos;\n\tsize = &apos;26px&apos;\n\tbold = &apos;true&apos;\n\ttype = &apos;Text&apos;\n\tvalue = &apos;My Expense Dashboard&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tmarginTop = &apos;5px&apos;\n\tcolor = &apos;#E0D4F5&apos;\n\tsize = &apos;14px&apos;\n\ttype = &apos;Text&apos;\n\tvalue = &apos;Submit, track and manage your expense claims&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n&lt;pc\n\tpaddingTop = &apos;10px&apos;\n\tpaddingBottom = &apos;10px&apos;\n\tpaddingLeft = &apos;24px&apos;\n\tpaddingRight = &apos;24px&apos;\n\tbgColor = &apos;#0F6E56&apos;\n\thAlign = &apos;center&apos;\n\tvAlign = &apos;middle&apos;\n&gt;\n&lt;pr&gt;\n&lt;pc\n\thAlign = &apos;center&apos;\n&gt;\n&lt;text\n\taction = &apos;OpenForm&apos;\n\tcomponentLinkName = &apos;expense_claims&apos;\n\ttarget = &apos;same-window&apos;\n\tcolor = &apos;#FFFFFF&apos;\n\tsize = &apos;15px&apos;\n\tbold = &apos;true&apos;\n\ttype = &apos;Text&apos;\n\tvalue = &apos;Submit new claim&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/panel&gt;\n&lt;%\n\n}%&gt;]]>\n</dspZml>\n</column>\n</row><row>\n\t<column\n   \t\t width='100%'\n   \t>\n\t<dspZml id='zml_snippet' elementName='KPI tiles'\n>\n\t<![CDATA[htmlpage zml_snippet()\ncontent\n&lt;%{\n\t%&gt;\n&lt;panel elementName=&apos;KPI_Tiles&apos;\n\n\ttitle = &apos;Key Metrics&apos;\n\n\t\ttitleSize = &apos;15px&apos;\n&gt;\n&lt;pr width=&apos;fill&apos; height=&apos;fill&apos;&gt;\n&lt;pc\n\tpaddingTop = &apos;10px&apos;\n\tpaddingLeft = &apos;0px&apos;\n\tpaddingRight = &apos;0px&apos;\n\tpaddingBottom = &apos;0px&apos;\n\tbgColor = &apos;#FFFFFF&apos;\n\twidth = &apos;100%&apos;\n\thAlign = &apos;left&apos;\n\tvAlign = &apos;middle&apos;\n&gt;\n&lt;pr width=&apos;fill&apos; height=&apos;fill&apos;&gt;\n\n&lt;pc\n\tpadding = &apos;20px&apos;\n\tbgColor = &apos;#0F6E56&apos;\n\twidth = &apos;32%&apos;\n\thAlign = &apos;left&apos;\n\tvAlign = &apos;middle&apos;\n&gt;\n&lt;pr width=&apos;auto&apos; height=&apos;auto&apos;&gt;\n&lt;pc&gt;\n&lt;image\n\tmarginLeft = &apos;0px&apos;\n\tmarginBottom = &apos;0px&apos;\n\tmarginTop = &apos;0px&apos;\n\tcolor = &apos;#FFFFFF&apos;\n\tbgColor = &apos;#1ABE75&apos;\n\twidth = &apos;52px&apos;\n\theight = &apos;52px&apos;\n\ttype = &apos;icon&apos;\n\tvalue = &apos;business-percentage-39&apos;\n\tsize = &apos;20px&apos;\n\tcornerRadius = &apos;10px&apos;\n\ticonType = &apos;outline&apos;\n/&gt;\n&lt;/pc&gt;\n&lt;pc\n\thAlign = &apos;left&apos;\n&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tmarginLeft = &apos;20px&apos;\n\tcolor = &apos;#FFFFFF&apos;\n\tsize = &apos;22px&apos;\n\tbold = &apos;true&apos;\n\ttype = &apos;Form Data&apos;\n\tdisplayType = &apos;actual&apos;\n\tdecimalPlaces = &apos;2&apos;\n\tthousandsSeperator = &apos;LOCALE&apos;\n\tdecimalSeperator = &apos;DOT&apos;\n\tnumberScale = &apos;none&apos;\n\tcriteria = &apos;status == &amp;quot;Approved&amp;quot;&apos;\n\tvalue = &apos;thisapp.expense_claims.amount_zar.sum&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tmarginLeft = &apos;20px&apos;\n\tmarginRight = &apos;0px&apos;\n\tmarginTop = &apos;3px&apos;\n\tcolor = &apos;#E1F5EE&apos;\n\tsize = &apos;14px&apos;\n\ttype = &apos;Text&apos;\n\tvalue = &apos;Approved (ZAR)&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n\n&lt;pc\n\tpadding = &apos;20px&apos;\n\tbgColor = &apos;#3C3489&apos;\n\twidth = &apos;34%&apos;\n\thAlign = &apos;center&apos;\n&gt;\n&lt;pr width=&apos;auto&apos; height=&apos;auto&apos;&gt;\n&lt;pc&gt;\n&lt;image\n\tmarginLeft = &apos;0px&apos;\n\tmarginBottom = &apos;0px&apos;\n\tmarginTop = &apos;0px&apos;\n\tcolor = &apos;#FFFFFF&apos;\n\tbgColor = &apos;#734AD0&apos;\n\twidth = &apos;52px&apos;\n\theight = &apos;52px&apos;\n\ttype = &apos;icon&apos;\n\tvalue = &apos;education-paper&apos;\n\tsize = &apos;20px&apos;\n\tcornerRadius = &apos;10px&apos;\n\ticonType = &apos;outline&apos;\n/&gt;\n&lt;/pc&gt;\n&lt;pc\n\thAlign = &apos;left&apos;\n&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tmarginLeft = &apos;20px&apos;\n\tcolor = &apos;#FFFFFF&apos;\n\tsize = &apos;22px&apos;\n\tbold = &apos;true&apos;\n\ttype = &apos;Form Data&apos;\n\tdisplayType = &apos;actual&apos;\n\tthousandsSeperator = &apos;LOCALE&apos;\n\tdecimalSeperator = &apos;DOT&apos;\n\tnumberScale = &apos;none&apos;\n\tvalue = &apos;thisapp.expense_claims.ID.count&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tmarginLeft = &apos;20px&apos;\n\tmarginRight = &apos;0px&apos;\n\tmarginTop = &apos;3px&apos;\n\tcolor = &apos;#CECBF6&apos;\n\tsize = &apos;14px&apos;\n\ttype = &apos;Text&apos;\n\tvalue = &apos;Total Claims&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n\n&lt;pc\n\tpadding = &apos;20px&apos;\n\tbgColor = &apos;#854F0B&apos;\n\twidth = &apos;34%&apos;\n\thAlign = &apos;center&apos;\n&gt;\n&lt;pr width=&apos;auto&apos; height=&apos;auto&apos;&gt;\n&lt;pc&gt;\n&lt;image\n\tmarginLeft = &apos;0px&apos;\n\tmarginBottom = &apos;0px&apos;\n\tmarginTop = &apos;0px&apos;\n\tcolor = &apos;#FFFFFF&apos;\n\tbgColor = &apos;#F6BC2B&apos;\n\twidth = &apos;52px&apos;\n\theight = &apos;52px&apos;\n\ttype = &apos;icon&apos;\n\tvalue = &apos;design-todo&apos;\n\tsize = &apos;22px&apos;\n\tcornerRadius = &apos;10px&apos;\n\ticonType = &apos;outline&apos;\n/&gt;\n&lt;/pc&gt;\n&lt;pc\n\thAlign = &apos;left&apos;\n&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tmarginLeft = &apos;20px&apos;\n\tcolor = &apos;#FFFFFF&apos;\n\tsize = &apos;22px&apos;\n\tbold = &apos;true&apos;\n\ttype = &apos;Form Data&apos;\n\tdisplayType = &apos;actual&apos;\n\tthousandsSeperator = &apos;LOCALE&apos;\n\tdecimalSeperator = &apos;DOT&apos;\n\tnumberScale = &apos;none&apos;\n\tcriteria = &apos;status == &amp;quot;Pending LM Approval&amp;quot; || status == &amp;quot;Pending HoD Approval&amp;quot;&apos;\n\tvalue = &apos;thisapp.expense_claims.ID.count&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;pr&gt;\n&lt;pc&gt;\n&lt;text\n\tmarginLeft = &apos;20px&apos;\n\tmarginRight = &apos;0px&apos;\n\tmarginTop = &apos;3px&apos;\n\tcolor = &apos;#FAEEDA&apos;\n\tsize = &apos;14px&apos;\n\ttype = &apos;Text&apos;\n\tvalue = &apos;Pending Approval&apos;\n&gt;\n&lt;/text&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/pc&gt;\n\n&lt;/pr&gt;\n&lt;/pc&gt;\n&lt;/pr&gt;\n&lt;/panel&gt;\n&lt;%\n\n}%&gt;]]>\n</dspZml>\n</column>\n</row><row>\n\t<column\n   \t\t width='100%'\n   \t>\n\t<report \n\telementName='Report'\n\n\t\tappLinkName = 'thisapp'\n\t\tlinkName = 'expense_claims_Report'\n\t\n\t\tiszreport = 'false'\n\t\t\t\t\tzc_AddRec = 'false'\n\t\t\t\t\tzc_EditRec = 'false'\n\t\t\t\t\tzc_Print = 'false'\n\t\t\t\t\tzc_DelRec = 'false'\n\t\t\t\t\tzc_DuplRec = 'false'\n\t\t\t\t\tzc_EditBulkRec = 'false'\n\t\t\t\t\tzc_BulkDelete = 'false'\n\t\t\t\t\tzc_BulkDuplicate = 'false'\n\theightType = 'custom'\n\theightValue = '500'\n\n/>\n</column>\n</row>\n</layout>\n</zml>"
+		}
+		page Management_Dashboard
+		{
+			displayname = "Management Dashboard"
+			Content="<zml    \t\t\n\t\t\n\t\t\n\t\t\n\t\t\n>\n\t<layout>\n\t<row>\n\t<column\n   \t\t width='100%'\n   \t>\n\t<report \n\telementName='Report'\n\n\t\tappLinkName = 'thisapp'\n\t\tlinkName = 'pending_approvals_manager'\n\t\n\t\tiszreport = 'false'\n\theightType = 'auto'\n\theightValue = '700'\n\n/>\n</column>\n</row><row>\n\t<column\n   \t\t width='100%'\n   \t>\n\t<report \n\telementName='Report 1'\n\n\t\tappLinkName = 'thisapp'\n\t\tlinkName = 'Expense_Summary'\n\t\n\t\tiszreport = 'true'\n\theightType = 'auto'\n\theightValue = '700'\n\n/>\n</column>\n</row>\n</layout>\n</zml>"
 		}
 	}
 
@@ -1399,8 +1403,7 @@
 													glRec = gl_accounts[expense_category == input.category && Active == true];
 													if(glRec != null && glRec.count() > 0)
 													{
-														glCode = glRec.gl_code;
-														input.gl_code = glCode;
+														input.gl_code = glRec.gl_code;
 													}
 													row = insert into approval_history
 													[
@@ -1493,8 +1496,7 @@
 												glRec = gl_accounts[expense_category == input.category && Active == true];
 												if(glRec != null && glRec.count() > 0)
 												{
-													glCode = glRec.gl_code;
-													input.gl_code = glCode;
+													input.gl_code = glRec.gl_code;
 												}
 												row = insert into approval_history
 												[
@@ -2859,28 +2861,12 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
     	 				)
-						record
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-    					)
     				)
     				action
     				(
 						on click
 						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Delete   	   
-							Duplicate   	   
 							View Record   	   
     					)
      				)
@@ -2896,7 +2882,7 @@
 							layout type = -2
 							fields
 							(
-								claim as "Claim"
+								claim.claim_id as "Claim ID"
 								action_1 as "Action"
 								actor as "Actor"
 								timestamp as "Timestamp"
@@ -2908,9 +2894,6 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
     	 				)
     				)
 				)
@@ -3130,6 +3113,10 @@
 					page Employee_Dashboard
 					{
 						icon = "business-business-contact-89"
+					}
+					page Management_Dashboard
+					{
+						icon = "education-books-46"
 					}
 				}
 				section Section_2
@@ -3401,7 +3388,7 @@
 	reports configuration
 	{
 	
-		Version = 1251000334798779
-		Key     = "dkET7DOCGzdsay69CRPkuaYNgu7pYB99b1vzAfrKBeskbPEfQm8wQ4q8SQg7nbxzzyDgfMOsn2bRt0RECXfxN9rCR660N8ARC3Xu"
+		Version = 1251000334944009
+		Key     = "RX4dWzSKpyUXwVTWJQWZndFODqzkkbqVDVppUQkZKbjU4V3PGkBH13hR6QREHOzntC1a8xEOqx56ejGYhfYqmQFQmJOvA1SYx00u"
 	}
 }
