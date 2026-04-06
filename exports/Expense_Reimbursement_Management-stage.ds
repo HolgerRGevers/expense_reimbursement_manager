@@ -418,10 +418,6 @@
 				displayname = "Client"
 				values  = clients.ID
     			displayformat = [" - " + name]
-				allow new entries
-				[
-					displayname = "Add New"
-				]
 				sortorder = ascending
 				height = 60px
 	 			row = 1
@@ -535,10 +531,6 @@
 				displayname = "GL Code"
 				values  = gl_accounts.ID
     			displayformat = [gl_code]
-				allow new entries
-				[
-					displayname = "Add New"
-				]
 				sortorder = ascending
 				height = 13px
 	 			row = 1
@@ -616,7 +608,7 @@
 			(
     			type = checkbox
 				displayname = "Receipt Required"
-				initial value = false
+				initial value = true
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -1648,7 +1640,7 @@
 							Supporting_Documents{visibility:true,readonly:true}
 							category{visibility:true,readonly:true}
 							department{visibility:true,readonly:true}
-							status{visibility:true,readonly:false}
+							status{visibility:true,readonly:true}
 						}
 					}
 				}
