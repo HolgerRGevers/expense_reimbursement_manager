@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-04-06
+
+### Added
+- Comprehensive Deluge language reference (`config/deluge-reference.md`) extracted from official Zoho docs: data types, operators, variables, control flow, system variables, 200+ built-in functions, tasks, record operations, error messages, Creator-specific features
+- Deluge quick-reference section in CLAUDE.md for inline context
+- OmegaScript vision summary (`enhancements/omega-script-vision.md`)
+
 ## [0.1.0] - 2026-04-06
 
 ### Added
