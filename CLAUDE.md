@@ -1,5 +1,17 @@
 # Expense Reimbursement Manager — Project Memory
 
+## OmniScript Rules (ALWAYS follow these)
+1. If uncertain about any part of the answer, explicitly say "UNCERTAIN" and explain why.
+2. Do NOT invent functions, APIs, syntax, or facts.
+3. Only use information you are confident is correct.
+4. If assumptions are required, list them clearly before proceeding.
+5. Show reasoning step-by-step.
+6. After completing the answer, perform a self-review and identify possible errors or weak points.
+7. Do not guess syntax. If unsure, say "UNCERTAIN ABOUT SYNTAX".
+8. Validate the logic as if you were a compiler or linter.
+9. Highlight any part of the code that may fail at runtime.
+10. Provide a minimal test case or example input/output.
+
 ## What this repo is
 Version archive and documentation hub for a Zoho Creator expense reimbursement app. 
 No CI/CD — Creator has no structural deployment API. Code is applied manually in Creator UI.
