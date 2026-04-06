@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - 2026-04-07
+
+### Added
+- Field descriptions (help text) on 42 of 49 fields across all 6 forms (was 5)
+  - Every user-facing field now has hover/tooltip guidance
+  - Descriptions explain purpose, format requirements, and compliance context
+  - Private/system fields (Department_Shadow, Client_Shadow, Parent_Claim_ID) excluded
+
+### Removed
+- `expense_claims_by_category` kanban report (Launchpad boilerplate, duplicated list view)
+- `approval_history_by_action_1` kanban report (generic grouping, no governance value)
+- All menu references and permission entries for deleted reports
+
+### Changed
+- Restricted report menus on reference/audit reports (approval_thresholds, clients, departments, approval_history) to view-only (removed Edit/Duplicate/Delete/Import/Export)
+- Kept full menus on expense_claims_Report, My_Claims, pending_approvals_manager (users need Edit)
+
 ## [0.4.0] - 2026-04-06
 
 ### Added

@@ -34,6 +34,11 @@
 				]
 				sortorder = ascending
 				height = 13px
+				description
+				[
+					type = help_text
+					message = "The expense claim this audit record relates to."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -43,6 +48,11 @@
 				type = picklist
 				displayname = "Action"
 				values = {"Submitted","Approved (LM)","Approved (HoD)","Rejected","Escalated (SLA Breach)","Resubmitted"}
+				description
+				[
+					type = help_text
+					message = "The action taken: Submitted, Approved (LM/HoD), Rejected, Escalated, or Resubmitted."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -51,6 +61,11 @@
 			(
     			type = text
 				displayname = "Actor"
+				description
+				[
+					type = help_text
+					message = "The person or system that performed the action."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -61,6 +76,11 @@
 				displayname = "Timestamp"
 				timedisplayoptions = "hh:mm:ss"
 				alloweddays = 0,1,2,3,4,5,6
+				description
+				[
+					type = help_text
+					message = "Date and time the action was recorded."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -70,6 +90,11 @@
     			type = textarea
 				displayname = "Comments"
 				height = 100px
+				description
+				[
+					type = help_text
+					message = "Details about the action, including amounts, GL codes, or rejection reasons."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -120,6 +145,11 @@
 			(
     			type = text
 				displayname = "Tier Name"
+				description
+				[
+					type = help_text
+					message = "Name of the approval tier (e.g., Tier 1 - Line Manager)."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -128,6 +158,11 @@
 			(
 				displayname = "Max Amount ZAR"
 				type = ZAR
+				description
+				[
+					type = help_text
+					message = "Maximum claim amount (ZAR) this tier can approve. Claims above this escalate to the next tier."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -136,6 +171,11 @@
 			(
     			type = text
 				displayname = "Approver Role"
+				description
+				[
+					type = help_text
+					message = "The Zoho Creator role that approves claims at this tier."
+				]
 	 			row = 1
 	 			column = 1
 				width = medium
@@ -144,6 +184,11 @@
 			(
     			type = checkbox
 				initial value = true
+				description
+				[
+					type = help_text
+					message = "Whether this threshold tier is currently active in the approval workflow."
+				]
 	 			row = 1
 	 			column = 1
 				width = medium
@@ -153,6 +198,11 @@
 				type = number
 				displayname = "Tier Order"
 				initial value = 0
+				description
+				[
+					type = help_text
+					message = "Numeric order of this tier in the escalation chain. Lower numbers approve first."
+				]
 	 			row = 1
 	 			column = 1
 				width = medium
@@ -204,6 +254,11 @@
     			type = autonumber
 				displayname = "Client ID"
 				start index = 1
+				description
+				[
+					type = help_text
+					message = "Auto-generated client identifier."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -212,6 +267,11 @@
 			(
     			type = text
 				displayname = "Name"
+				description
+				[
+					type = help_text
+					message = "Client name as it appears in dropdown selections."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -221,6 +281,11 @@
     			type = checkbox
 				displayname = "Active"
 				initial value = true
+				description
+				[
+					type = help_text
+					message = "Whether this client is currently active and available for selection."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -272,6 +337,11 @@
     			type = autonumber
 				displayname = "Department ID"
 				start index = 1
+				description
+				[
+					type = help_text
+					message = "Auto-generated department identifier."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -280,6 +350,11 @@
 			(
     			type = text
 				displayname = "Name"
+				description
+				[
+					type = help_text
+					message = "Department name as it appears in dropdown selections."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -289,6 +364,11 @@
     			type = checkbox
 				displayname = "Active"
 				initial value = true
+				description
+				[
+					type = help_text
+					message = "Whether this department is currently active and available for selection."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -362,6 +442,11 @@
 	     			 displayname ="Suffix"
 	     			 visibility = false
      			) 
+				description
+				[
+					type = help_text
+					message = "Your full name as registered in the system. Auto-populated on form load."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -388,6 +473,11 @@
 				displayname = "Submission Date"
 				timedisplayoptions = "hh:mm:ss"
 				alloweddays = 0,1,2,3,4,5,6
+				description
+				[
+					type = help_text
+					message = "Date and time the claim was submitted. Set automatically."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -397,6 +487,11 @@
     			type = autonumber
 				displayname = "Claim ID"
 				start index = 1
+				description
+				[
+					type = help_text
+					message = "System-generated unique claim number. Used for tracking and reference."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -409,6 +504,11 @@
     			displayformat = [" - " + name]
 				sortorder = ascending
 				height = 60px
+				description
+				[
+					type = help_text
+					message = "Select your department. Used for reporting and approval routing."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -417,6 +517,11 @@
 			(
     			type = text
 				displayname = "Claim Reference"
+				description
+				[
+					type = help_text
+					message = "Auto-generated reference (EXP-0001 format). Use this when communicating about the claim."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -429,6 +534,11 @@
     			displayformat = [" - " + name]
 				sortorder = ascending
 				height = 60px
+				description
+				[
+					type = help_text
+					message = "Select the client this expense relates to. Choose Internal for non-client expenses."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -438,6 +548,11 @@
     			type = date
 				displayname = "Expense Date"
 				alloweddays = 0,1,2,3,4,5,6
+				description
+				[
+					type = help_text
+					message = "Date the expense was incurred. Cannot be in the future or older than 90 days."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -456,6 +571,11 @@
 				type = picklist
 				displayname = "Category"
 				values = {"Travel","Accommodation","Meals & Entertainment","Office Supplies","Communication","Professional Services","Other"}
+				description
+				[
+					type = help_text
+					message = "Select the expense category. Determines GL code mapping and VAT requirements."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -473,6 +593,11 @@
 			(
 				displayname = "Amount ZAR"
 				type = ZAR
+				description
+				[
+					type = help_text
+					message = "Total expense amount in South African Rand (ZAR). Must be greater than zero."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -483,6 +608,11 @@
 				displayname = "Supporting Documents"
     			file count = 10
 				browse = local_drive, google_docs, zoho_docs
+				description
+				[
+					type = help_text
+					message = "Upload receipts or invoices. Required by SARS S11(a) for all claims. Max 10 files."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -492,6 +622,11 @@
     			type = textarea
 				displayname = "Description"
 				height = 100px
+				description
+				[
+					type = help_text
+					message = "Describe the business purpose of this expense. Required for SARS S11(a) substantiation."
+				]
 	 			row = 1
 	 			column = 1
 				width = medium
@@ -501,6 +636,11 @@
 				type = picklist
 				displayname = "VAT Invoice Type"
 				values = {"None","Abbreviated (< R5,000)","Full Tax Invoice (>= R5,000)"}
+				description
+				[
+					type = help_text
+					message = "Select invoice type. Claims >= R5,000 require a Full Tax Invoice per SARS VAT rules."
+				]
 	 			row = 1
 	 			column = 1
 				width = medium
@@ -524,6 +664,11 @@
 				type = picklist
 				displayname = "Status"
 				values = {"Draft","Submitted","Pending LM Approval","Pending HoD Approval","Approved","Rejected","Resubmitted"}
+				description
+				[
+					type = help_text
+					message = "Current claim status. Updated automatically by the approval workflow."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -533,6 +678,11 @@
     			type = textarea
 				displayname = "Rejection Reason"
 				height = 100px
+				description
+				[
+					type = help_text
+					message = "Reason for rejection, provided by the approver. Read-only for employees."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -541,6 +691,11 @@
 			(
 				type = number
 				initial value = 1
+				description
+				[
+					type = help_text
+					message = "Claim version number. Incremented each time the claim is resubmitted after rejection."
+				]
 	 			row = 1
 	 			column = 1
 				width = medium
@@ -580,6 +735,11 @@
     			displayformat = [gl_code]
 				sortorder = ascending
 				height = 13px
+				description
+				[
+					type = help_text
+					message = "General Ledger code assigned during approval. Maps the expense to the correct account."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -630,6 +790,11 @@
 			(
     			type = text
 				displayname = "GL Code"
+				description
+				[
+					type = help_text
+					message = "The General Ledger account code (e.g., 6200). Must match your accounting system."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -638,6 +803,11 @@
 			(
     			type = text
 				displayname = "Account Name"
+				description
+				[
+					type = help_text
+					message = "Descriptive name for this GL account (e.g., Travel - Local Transport)."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -647,6 +817,11 @@
 				type = picklist
 				displayname = "Expense Category"
 				values = {"Travel","Accommodation","Meals & Entertainment","Office Supplies","Communication","Professional Services","Other"}
+				description
+				[
+					type = help_text
+					message = "The expense category this GL code maps to. Used for auto-assignment during approval."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -656,6 +831,11 @@
     			type = checkbox
 				displayname = "Receipt Required"
 				initial value = true
+				description
+				[
+					type = help_text
+					message = "Whether a receipt/invoice is required for expenses in this category. Default: Yes (SARS S11(a))."
+				]
 	 			row = 1
 	 			column = 1   
 				width = medium
@@ -692,6 +872,11 @@
 			(
     			type = checkbox
 				initial value = true
+				description
+				[
+					type = help_text
+					message = "Whether this GL code is currently available for assignment."
+				]
 	 			row = 1
 	 			column = 1
 				width = medium
@@ -768,28 +953,6 @@
 				format = "color:#ffffff;background-color:#e84c3d;"
 				}
 			)
-		}
-		kanban expense_claims_by_category
-		{
-			displayName = "Categories"
-			show all rows from expense_claims    
-			(
-				claim_id as "Claim ID"
-				department as "Department"
-				client as "Client"
-				category as "Category"
-				amount_zar as "Amount ZAR"
-				(
-					display = total,average,min,max	
-				)
-				description as "Description"
-				status as "Status"
-				gl_code as "GL Code"
-			)
-			options
-			(
-	 			display field = category
-	 		)
 		}
 		list gl_accounts_Report
 		{
@@ -870,22 +1033,6 @@
 				format = "color:#ffffff;background-color:#e84c3d;"
 				}
 			)
-		}
-		kanban approval_history_by_action_1
-		{
-			displayName = "Actions"
-			show all rows from approval_history    
-			(
-				claim as "Claim"
-				action_1 as "Action"
-				actor as "Actor"
-				timestamp as "Timestamp"
-				comments as "Comments"
-			)
-			options
-			(
-	 			display field = action_1
-	 		)
 		}
 		list approval_thresholds_Report
 		{
@@ -1697,7 +1844,6 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
-							expense_claims_by_category={"View","Edit","Delete"}
 						}
 						FieldPermissions
 						{
@@ -1825,7 +1971,6 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
-							expense_claims_by_category={"View","Edit","Delete"}
 						}
 					}
 				}
@@ -1894,7 +2039,6 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
-							expense_claims_by_category={"View","Edit","Delete"}
 						}
 					}
 				}
@@ -1951,7 +2095,6 @@
 						ReportPermissions
 						{
 							approval_history_Report={"View","Edit","Delete"}
-							approval_history_by_action_1={"View","Edit","Delete"}
 						}
 					}
 					expense_claims
@@ -1961,7 +2104,6 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit","Delete"}
-							expense_claims_by_category={"View","Edit","Delete"}
 						}
 					}
 				}
@@ -1989,7 +2131,6 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit"}
-							expense_claims_by_category={"View","Edit"}
 						}
 					}
 				}
@@ -2009,7 +2150,6 @@
 						ReportPermissions
 						{
 							approval_history_Report={"View"}
-							approval_history_by_action_1={"View"}
 						}
 					}
 					expense_claims
@@ -2018,7 +2158,6 @@
 						ReportPermissions
 						{
 							expense_claims_Report={"View","Edit"}
-							expense_claims_by_category={"View","Edit"}
 						}
 					}
 				}
@@ -2199,92 +2338,6 @@
 								department_id as "Department ID"
 								name as "Name"
 								is_active as "Active"
-							)
-						)
-					)
-					menu
-    				(
-    	 				header
-    	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    	 				)
-    				)
-				)
-			}
-			report expense_claims_by_category
-			{
-				quickview
-				(
-					layout
-					(
-		 				type = 1
-						datablock1
-						(
-							layout type = 1
-							fields
-							(
-								claim_id as "Claim ID"
-							)
-						)
-					)
-					menu
-    				(
-    	 				header
-    	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    		 				Add 
-    		 				Import 
-    		 				Export 
-    	 				)
-						record
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
-    					)
-    				)
-    				action
-    				(
-						on click
-						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
-							View Record   	   
-    					)
-     				)
-				)
-
-				detailview
-				(
-					layout
-					(
-		 				type = 1
-						datablock1
-						(
-							layout type = -2
-							fields
-							(
-								claim_id as "Claim ID"
-								department as "Department"
-								client as "Client"
-								category as "Category"
-								amount_zar as "Amount ZAR"
-								description as "Description"
-								status as "Status"
-								gl_code as "GL Code"
 							)
 						)
 					)
@@ -2493,34 +2546,15 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    		 				Add 
-    		 				Import 
-    		 				Export 
     	 				)
 						record
 						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
 							View Record   	   
     					)
      				)
@@ -2566,94 +2600,6 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    	 				)
-    				)
-				)
-			}
-			report approval_history_by_action_1
-			{
-				quickview
-				(
-					layout
-					(
-		 				type = 1
-						datablock1
-						(
-							layout type = 1
-							fields
-							(
-								actor as "Actor"
-								claim as "Claim"
-							)
-						)
-					)
-					menu
-    				(
-    	 				header
-    	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    		 				Add 
-    		 				Import 
-    		 				Export 
-    	 				)
-						record
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
-    					)
-    				)
-    				action
-    				(
-						on click
-						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
-							View Record   	   
-    					)
-     				)
-				)
-
-				detailview
-				(
-					layout
-					(
-		 				type = 1
-						datablock1
-						(
-							layout type = -2
-							fields
-							(
-								claim as "Claim"
-								action_1 as "Action"
-								actor as "Actor"
-								timestamp as "Timestamp"
-								comments as "Comments"
-							)
-						)
-					)
-					menu
-    				(
-    	 				header
-    	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
     	 				)
     				)
 				)
@@ -2680,34 +2626,15 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    		 				Add 
-    		 				Import 
-    		 				Export 
     	 				)
 						record
 						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
 							View Record   	   
     					)
      				)
@@ -2734,10 +2661,6 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
     	 				)
     				)
 				)
@@ -2764,34 +2687,15 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    		 				Add 
-    		 				Import 
-    		 				Export 
     	 				)
 						record
 						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
 							View Record   	   
     					)
      				)
@@ -2818,10 +2722,6 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
     	 				)
     				)
 				)
@@ -2848,34 +2748,15 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
-    		 				Add 
-    		 				Import 
-    		 				Export 
     	 				)
 						record
 						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
     					)
     				)
     				action
     				(
 						on click
 						(
-							View Record   	   
-    					)
-						on right click
-						(
-							Edit   	   
-							Duplicate   	   
-							Delete   	   
-							Print   	   
 							View Record   	   
     					)
      				)
@@ -2902,10 +2783,6 @@
     				(
     	 				header
     	 				(
-    		 				Edit 
-    		 				Duplicate 
-    		 				Delete 
-    		 				Print 
     	 				)
     				)
 				)
@@ -3204,10 +3081,6 @@
 					{
 						icon = "travel-world"
 					}
-					report expense_claims_by_category
-					{
-						icon = "design-2-selection"
-					}
 					report My_Claims
 					{
 						icon = "business-currency-dollar"
@@ -3250,10 +3123,6 @@
 					report approval_history_Report
 					{
 						icon = "travel-world"
-					}
-					report approval_history_by_action_1
-					{
-						icon = "media-1-action-74"
 					}
 					report Audit_Trail
 					{
