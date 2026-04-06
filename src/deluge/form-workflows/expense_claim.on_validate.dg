@@ -1,0 +1,40 @@
+// ============================================================
+// Script:   expense_claim.on_validate.dg
+// Location: Expense_Claim form > Workflow > On Validate
+// Trigger:  Form submission (before save)
+// Purpose:  Hard-stop validation: future dates, 90-day window, positive amount, mandatory receipt (SARS S11(a))
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// ============================================================
+
+// 1. No future expense dates
+if (input.Expense_Date > zoho.currentdate)
+{
+    alert "Expense date cannot be in the future.";
+    cancel submit;
+}
+
+// 2. 90-day late submission policy
+daysDiff = daysBetween(input.Expense_Date, zoho.currentdate);
+if (daysDiff > 90)
+{
+    alert "Expenses older than 90 days cannot be submitted. Contact Finance for exceptions.";
+    cancel submit;
+}
+
+// 3. Positive amount
+if (input.amount_zar <= 0)
+{
+    alert "Amount must be greater than zero.";
+    cancel submit;
+}
+
+// 4. Mandatory receipt (SARS substantiation)
+if (input.Supporting_Documents == null || input.Supporting_Documents == "")
+{
+    alert "At least one supporting document (receipt/invoice) is required.";
+    cancel submit;
+}
+
+// 5. All validations pass - set initial status
+input.status = "Submitted";
+input.Submission_Date = zoho.currenttime;

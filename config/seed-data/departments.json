@@ -1,0 +1,7 @@
+[
+  { "Department_Name": "Sales", "Active": true },
+  { "Department_Name": "Customer Service", "Active": true },
+  { "Department_Name": "Finance", "Active": true },
+  { "Department_Name": "Operations", "Active": true },
+  { "Department_Name": "IT", "Active": true }
+]

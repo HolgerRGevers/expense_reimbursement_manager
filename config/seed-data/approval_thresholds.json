@@ -1,0 +1,4 @@
+[
+  { "Tier_Name": "Tier 1 - Line Manager", "Max_Amount_ZAR": 999.99, "Approver_Role": "Line Manager", "Active": true },
+  { "Tier_Name": "Tier 2 - Head of Department", "Max_Amount_ZAR": 10000.00, "Approver_Role": "Head of Department", "Active": true }
+]

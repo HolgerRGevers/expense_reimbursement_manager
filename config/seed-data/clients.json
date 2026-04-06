@@ -1,0 +1,7 @@
+[
+  { "Client_Name": "MTN", "Active": true },
+  { "Client_Name": "Vodacom", "Active": true },
+  { "Client_Name": "Cell C", "Active": true },
+  { "Client_Name": "Telkom", "Active": true },
+  { "Client_Name": "Internal", "Active": true }
+]

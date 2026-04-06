@@ -1,0 +1,11 @@
+// ============================================================
+// Script:   expense_claim.on_success.fill_shadows.dg
+// Location: Expense_Claim form > Workflow > On Success (Fill_Shadow_text_fields)
+// Trigger:  After successful form submission or edit
+// Purpose:  Populate denormalized shadow text fields for Department and Client names
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Note:     Extracted from .ds export workflow "Fill_Shadow_text_fields"
+// ============================================================
+
+input.Department_Shadow = ifnull(input.department.name, "");
+input.Client_Shadow = ifnull(input.client.name, "");

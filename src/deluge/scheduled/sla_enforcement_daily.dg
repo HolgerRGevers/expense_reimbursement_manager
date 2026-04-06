@@ -1,0 +1,51 @@
+// ============================================================
+// Script:   sla_enforcement_daily.dg
+// Location: Workflow > Schedules > SLA_Enforcement_Daily
+// Trigger:  Scheduled (daily - Free Trial limitation; hourly on paid plan)
+// Purpose:  SLA enforcement: escalation not bypass. 2-day reminder, 3-day auto-escalation to HoD.
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Note:     Uses daysBetween (not hoursBetween) due to Free Trial daily-only schedule constraint
+// ============================================================
+
+pendingClaims = expense_claims[status == "Pending LM Approval"];
+
+for each claim in pendingClaims
+{
+    daysSince = daysBetween(claim.Submission_Date, zoho.currentdate);
+
+    if (daysSince >= 3)
+    {
+        // Auto-escalate to HoD
+        claim.status = "Pending HoD Approval";
+
+        row = insert into approval_history
+        [
+            claim = claim.ID
+            action_1 = "Escalated (SLA Breach)"
+            actor = "SYSTEM"
+            timestamp = zoho.currenttime
+            comments = "Line Manager did not act within 3 days. Auto-escalated to HoD."
+            Added_User = zoho.loginuser
+        ];
+
+        sendmail
+        [
+            from : zoho.adminuserid
+            to : "hod.demo@yourdomain.com"
+            subject : "SLA BREACH - Claim " + claim.claim_id + " escalated"
+            message : "LM failed to act within 3 days.\nAmount: R" + claim.amount_zar
+        ];
+    }
+    else if (daysSince >= 2)
+    {
+        // Reminder
+        sendmail
+        [
+            from : zoho.adminuserid
+            to : "linemanager.demo@yourdomain.com"
+            cc : "hod.demo@yourdomain.com"
+            subject : "REMINDER - Claim " + claim.claim_id + " awaiting approval"
+            message : "Pending >2 days. Auto-escalates at 3 days."
+        ];
+    }
+}

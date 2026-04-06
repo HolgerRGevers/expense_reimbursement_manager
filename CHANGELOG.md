@@ -1,0 +1,29 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [0.1.0] - 2026-04-06
+
+### Added
+- Repository scaffold with documentation structure
+- All v2.1 Deluge scripts (10 files): On Validate, On Success, On Edit, LM Approve/Reject, HoD Approve/Reject, SLA Enforcement, Generate Claim Reference, Auto-Populate Employee, Fill Shadow Fields
+- Seed data JSON for Departments, Clients, GL_Accounts, Approval_Thresholds
+- Architecture documentation: data model, state machine, approval routing, system overview
+- Compliance documentation: King IV mapping, SARS requirements, Delegation of Authority
+- Build guide: 19-step sequence, remediation plan v2.1, field link name mapping
+- Test scenarios and demo script
+- .ds export snapshot in exports/
+
+### Fixed
+- Corrected `zoho.loginuserrole` to `thisapp.permissions.isUserInRole()` across all scripts
+- Corrected SLA timer from `hoursBetween` to `daysBetween` for Free Trial daily schedule
+- Corrected threshold fallback from 1000 to 999.99 to match seed data
+- Added `Added_User = zoho.loginuser` to all `insert into approval_history` blocks
+- Added null guard on GL query: `glRec != null && glRec.count() > 0`
+
+## [0.0.0] - 2026-04-06
+
+### Added
+- Initial commit with README.md

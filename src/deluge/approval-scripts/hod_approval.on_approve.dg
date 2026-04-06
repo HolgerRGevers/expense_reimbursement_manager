@@ -1,0 +1,36 @@
+// ============================================================
+// Script:   hod_approval.on_approve.dg
+// Location: Approval Process > HoD Approval > Level 1 > On Approve
+// Trigger:  Approver clicks Approve
+// Purpose:  Final approval, GL code population, audit trail, notification
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// ============================================================
+
+input.status = "Approved";
+
+// GL code auto-population
+glCode = "";
+glRec = gl_accounts[expense_category == input.category && Active == true];
+if (glRec != null && glRec.count() > 0)
+{
+    glCode = glRec.gl_code;
+    input.gl_code = glCode;
+}
+
+row = insert into approval_history
+[
+    claim = input.ID
+    action_1 = "Approved (HoD)"
+    actor = zoho.loginuser
+    timestamp = zoho.currenttime
+    comments = "Head of Department final approval. GL: " + ifnull(glCode, "UNMAPPED")
+    Added_User = zoho.loginuser
+];
+
+sendmail
+[
+    from : zoho.adminuserid
+    to : input.Email
+    subject : "Expense Claim " + input.claim_id + " - Final Approval"
+    message : "Your claim for R" + input.amount_zar + " has received final approval."
+]

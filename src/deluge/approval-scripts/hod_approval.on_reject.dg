@@ -1,0 +1,29 @@
+// ============================================================
+// Script:   hod_approval.on_reject.dg
+// Location: Approval Process > HoD Approval > Level 1 > On Reject
+// Trigger:  Approver clicks Reject
+// Purpose:  Set status to Rejected, log audit trail, notify employee
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// ============================================================
+
+input.status = "Rejected";
+
+rejectReason = ifnull(input.Rejection_Reason, "No reason provided");
+
+row = insert into approval_history
+[
+    claim = input.ID
+    action_1 = "Rejected"
+    actor = zoho.loginuser
+    timestamp = zoho.currenttime
+    comments = "HoD rejection. Reason: " + rejectReason
+    Added_User = zoho.loginuser
+];
+
+sendmail
+[
+    from : zoho.adminuserid
+    to : input.Email
+    subject : "Expense Claim " + input.claim_id + " - Rejected by HoD"
+    message : "Your claim for R" + input.amount_zar + " has been rejected by the Head of Department.\nReason: " + rejectReason + "\nYou may edit and resubmit."
+]

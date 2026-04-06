@@ -1,0 +1,27 @@
+// ============================================================
+// Script:   expense_claim.on_success.generate_ref.dg
+// Location: Expense_Claim form > Workflow > On Success (Generate_Claim_Reference)
+// Trigger:  After successful form submission
+// Purpose:  Auto-generate claim reference in format "EXP-0005" from claim_id
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Note:     Extracted from .ds export workflow "Generate_Claim_Reference"
+// ============================================================
+
+claimNum = input.claim_id.toString();
+
+// Zero-pad to 4 digits
+padded = claimNum;
+if (claimNum.length() == 1)
+{
+    padded = "000" + claimNum;
+}
+else if (claimNum.length() == 2)
+{
+    padded = "00" + claimNum;
+}
+else if (claimNum.length() == 3)
+{
+    padded = "0" + claimNum;
+}
+
+input.Claim_Reference = "EXP-" + padded;

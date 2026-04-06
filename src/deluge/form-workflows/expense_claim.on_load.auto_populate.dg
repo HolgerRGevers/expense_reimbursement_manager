@@ -1,0 +1,11 @@
+// ============================================================
+// Script:   expense_claim.on_load.auto_populate.dg
+// Location: Expense_Claim form > Workflow > On Load (Employee_Name_auto_populate)
+// Trigger:  Form load (on add)
+// Purpose:  Auto-populate Employee_Name from logged-in user and Email from login ID
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Note:     Extracted from .ds export workflow "Employee_Name_auto_popula"
+// ============================================================
+
+input.Employee_Name1 = zoho.loginuser;
+input.Email = zoho.loginuserid;

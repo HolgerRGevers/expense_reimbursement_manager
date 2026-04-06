@@ -1,0 +1,60 @@
+// ============================================================
+// Script:   expense_claim.on_edit.dg
+// Location: Expense_Claim form > Workflow > On Edit
+// Trigger:  Record edit/save
+// Purpose:  Resubmission handler - version increment, status reset, self-approval check on resubmit
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Note:     Uses thisapp.permissions.isUserInRole() - zoho.loginuserrole does NOT exist
+// ============================================================
+
+if (input.status == "Resubmitted")
+{
+    input.Version = input.Version + 1;
+    input.Submission_Date = zoho.currenttime;
+
+    row = insert into approval_history
+    [
+        claim = input.ID
+        action_1 = "Resubmitted"
+        actor = zoho.loginuser
+        timestamp = zoho.currenttime
+        comments = "Resubmitted as version " + input.Version
+        Added_User = zoho.loginuser
+    ];
+
+    // Self-approval check on resubmit
+    if (thisapp.permissions.isUserInRole("Line Manager"))
+    {
+        input.status = "Pending HoD Approval";
+
+        row = insert into approval_history
+        [
+            claim = input.ID
+            action_1 = "Submitted (Self-approval bypass)"
+            actor = zoho.loginuser
+            timestamp = zoho.currenttime
+            comments = "Resubmitter holds Line Manager role. Routed directly to HoD."
+            Added_User = zoho.loginuser
+        ];
+
+        sendmail
+        [
+            from : zoho.adminuserid
+            to : "hod.demo@yourdomain.com"
+            subject : "RESUBMITTED - Claim " + input.claim_id + " (v" + input.Version + ") - Direct HoD Review"
+            message : "Resubmitted by a Line Manager. Self-approval prevention engaged."
+        ];
+
+        return;
+    }
+
+    input.status = "Pending LM Approval";
+
+    sendmail
+    [
+        from : zoho.adminuserid
+        to : "linemanager.demo@yourdomain.com"
+        subject : "RESUBMITTED - Claim " + input.claim_id + " (v" + input.Version + ")"
+        message : "Edited and resubmitted for approval."
+    ];
+}

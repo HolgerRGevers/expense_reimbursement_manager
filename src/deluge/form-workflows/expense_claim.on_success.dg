@@ -1,0 +1,60 @@
+// ============================================================
+// Script:   expense_claim.on_success.dg
+// Location: Expense_Claim form > Workflow > On Success
+// Trigger:  After successful form submission
+// Purpose:  Self-approval prevention (King IV P1), routing, audit trail, LM notification
+// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Note:     Uses thisapp.permissions.isUserInRole() - zoho.loginuserrole does NOT exist
+// ============================================================
+
+submitter = zoho.loginuser;
+
+// STEP 1: Self-Approval Prevention
+// If submitter holds the Line Manager role, bypass LM tier - route to HoD
+if (thisapp.permissions.isUserInRole("Line Manager"))
+{
+    input.status = "Pending HoD Approval";
+
+    row = insert into approval_history
+    [
+        claim = input.ID
+        action_1 = "Submitted (Self-approval bypass)"
+        actor = submitter
+        timestamp = zoho.currenttime
+        comments = "Submitter holds Line Manager role. Routed directly to HoD."
+        Added_User = zoho.loginuser
+    ];
+
+    sendmail
+    [
+        from : zoho.adminuserid
+        to : "hod.demo@yourdomain.com"
+        subject : "Expense Claim " + input.claim_id + " - Direct HoD Review"
+        message : "Submitted by a Line Manager. Self-approval prevention engaged."
+    ];
+
+    return;
+}
+
+// STEP 2: Normal routing - Line Manager
+input.status = "Pending LM Approval";
+
+// STEP 3: Audit trail
+row = insert into approval_history
+[
+    claim = input.ID
+    action_1 = "Submitted"
+    actor = zoho.loginuser
+    timestamp = zoho.currenttime
+    comments = "Initial submission. Amount: R" + input.amount_zar
+    Added_User = zoho.loginuser
+];
+
+// STEP 4: Notify Line Manager
+sendmail
+[
+    from : zoho.adminuserid
+    to : "linemanager.demo@yourdomain.com"
+    subject : "Expense Claim " + input.claim_id + " requires your approval"
+    message : "Employee: " + input.Employee_Name1 + "\nAmount: R" + input.amount_zar
+];
