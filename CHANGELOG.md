@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-04-06
+
+### Added
+- Deluge linter (`tools/lint_deluge.py`) — 16 static analysis rules for .dg files
+  - 10 ERROR rules: banned functions, field validation, null guards, audit trail, syntax
+  - 5 WARN rules: status/action values, operator precedence, thresholds, demo emails
+  - 1 INFO rule: hardcoded email detection
+- Test fixtures (`tests/lint_test_bad.dg`, `tests/scheduled/lint_test_dg003.dg`)
+- Linter usage instructions in CLAUDE.md
+
 ## [0.1.1] - 2026-04-06
 
 ### Added

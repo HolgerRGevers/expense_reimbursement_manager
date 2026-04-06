@@ -19,6 +19,14 @@ No CI/CD — Creator has no structural deployment API. Code is applied manually 
 - Strings use double quotes only (never single quotes)
 - `ifnull(value, fallback)` for every query result
 
+## Linting
+After editing any .dg file, run:
+```
+python tools/lint_deluge.py src/deluge/
+```
+Exit 0 = clean. Exit 1 = warnings. Exit 2 = errors (must fix before proceeding).
+If errors found: fix them iteratively and re-run until clean, then ask the user what to do next.
+
 ## Repo structure convention
 - `src/deluge/` — scripts organised by Creator UI location (form-workflows, approval-scripts, scheduled)
 - `docs/` — architecture, compliance, build-guide, testing
