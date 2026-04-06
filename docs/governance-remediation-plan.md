@@ -5,15 +5,13 @@ Audited against: .ds export (06-Apr-2026), src/deluge/ scripts, config/roles-and
 
 ## Executive Summary
 
-16 gaps identified. 3 already resolved. 13 remain open for piecemeal implementation.
+16 gaps identified. 15 resolved or implemented in .ds. 1 remaining (G-05 hardcoded emails -- requires config table design).
 
 | Status | Count | Gaps |
 |--------|-------|------|
-| Resolved | 3 | G-01, G-02, G-12 |
-| Open - CRITICAL | 1 | G-07 |
-| Open - HIGH | 5 | G-03, G-04, G-05, G-09, G-11 |
-| Open - MEDIUM | 5 | G-06, G-08, G-10, G-13, G-15 |
-| Open - LOW | 2 | G-14, G-16 |
+| Resolved (pre-existing) | 3 | G-01, G-02, G-12 |
+| Implemented in .ds (pending user import test) | 12 | G-03, G-04, G-06, G-07, G-08, G-09, G-10, G-11, G-13, G-14, G-15, G-16 |
+| Open - requires design decision | 1 | G-05 (hardcoded emails -- needs config table or Creator approval notifications) |
 
 ## Implementation Phases
 

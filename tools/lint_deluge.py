@@ -530,16 +530,19 @@ def check_dg006(filename: str, block: Block) -> list[Diagnostic]:
     return []
 
 
+VALID_ADDED_USER_VALUES = {"zoho.loginuser", "zoho.adminuserid"}
+
+
 def check_dg007(filename: str, block: Block) -> list[Diagnostic]:
-    """DG007: Wrong Added_User value (must be zoho.loginuser)."""
+    """DG007: Wrong Added_User value (must be zoho.loginuser or zoho.adminuserid for scheduled)."""
     if block.block_type != "insert" or block.target_table != "approval_history":
         return []
     if "Added_User" in block.fields:
         val = block.fields["Added_User"].value.strip()
-        if val != "zoho.loginuser":
+        if val not in VALID_ADDED_USER_VALUES:
             return [Diagnostic(
                 filename, block.fields["Added_User"].line, Severity.ERROR, "DG007",
-                f"Added_User must be 'zoho.loginuser', got '{val}'.",
+                f"Added_User must be 'zoho.loginuser' (or 'zoho.adminuserid' for scheduled tasks), got '{val}'.",
             )]
     return []
 

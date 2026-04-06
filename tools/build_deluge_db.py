@@ -353,9 +353,12 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("expense_claims", "amount_zar", "Amount ZAR", "currency", None),
         ("expense_claims", "Supporting_Documents", "Supporting Documents", "file", "Max 10 files"),
         ("expense_claims", "description", "Description", "textarea", None),
+        ("expense_claims", "VAT_Invoice_Type", "VAT Invoice Type", "picklist", "None/Abbreviated/Full Tax Invoice"),
+        ("expense_claims", "POPIA_Consent", "POPIA Consent", "checkbox", "Mandatory for submission"),
         ("expense_claims", "status", "Status", "picklist", None),
         ("expense_claims", "Rejection_Reason", "Rejection Reason", "textarea", None),
         ("expense_claims", "Version", "Version", "number", "Default: 1"),
+        ("expense_claims", "Retention_Expiry_Date", "Retention Expiry Date", "date", "SARS S29: 5yr from submission"),
         ("expense_claims", "Parent_Claim_ID", "Parent Claim ID", "picklist", "Self-ref FK"),
         ("expense_claims", "gl_code", "GL Code", "list", "FK -> gl_accounts.ID"),
         ("expense_claims", "ID", "ID", "autonumber", "System-generated"),
@@ -374,6 +377,7 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("approval_thresholds", "tier_name", "Tier Name", "text", None),
         ("approval_thresholds", "max_amount_zar", "Max Amount ZAR", "currency", None),
         ("approval_thresholds", "approver_role", "Approver Role", "text", None),
+        ("approval_thresholds", "Tier_Order", "Tier Order", "number", "Escalation sequence"),
         ("approval_thresholds", "Active", "Active", "checkbox", "Default: true"),
     ]
     # GL Accounts
@@ -383,6 +387,7 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("gl_accounts", "expense_category", "Expense Category", "picklist", None),
         ("gl_accounts", "receipt_required", "Receipt Required", "checkbox", None),
         ("gl_accounts", "SARS_Provision", "SARS Provision", "text", None),
+        ("gl_accounts", "Risk_Level", "Risk Level", "picklist", "ISO 37001: Standard/Elevated/High"),
         ("gl_accounts", "Active", "Active", "checkbox", "Default: true"),
     ]
     # Departments

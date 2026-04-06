@@ -137,7 +137,7 @@
     			type = text
 				displayname = "Approver Role"
 	 			row = 1
-	 			column = 1   
+	 			column = 1
 				width = medium
 			)
 			Active
@@ -145,10 +145,19 @@
     			type = checkbox
 				initial value = true
 	 			row = 1
-	 			column = 1   
+	 			column = 1
 				width = medium
 			)
-	
+			Tier_Order
+			(
+				type = number
+				displayname = "Tier Order"
+				initial value = 0
+	 			row = 1
+	 			column = 1
+				width = medium
+			)
+
 			actions
 			{
 				on add
@@ -484,7 +493,30 @@
 				displayname = "Description"
 				height = 100px
 	 			row = 1
-	 			column = 1   
+	 			column = 1
+				width = medium
+			)
+			VAT_Invoice_Type
+			(
+				type = picklist
+				displayname = "VAT Invoice Type"
+				values = {"None","Abbreviated (< R5,000)","Full Tax Invoice (>= R5,000)"}
+	 			row = 1
+	 			column = 1
+				width = medium
+			)
+			POPIA_Consent
+			(
+    			type = checkbox
+				displayname = "POPIA Consent"
+    			description
+    			[
+    				type = help_text
+    			 	message = "I consent to the processing of my personal data for expense reimbursement purposes in accordance with POPIA."
+    			]
+				initial value = false
+	 			row = 1
+	 			column = 1
 				width = medium
 			)
 			status
@@ -510,7 +542,22 @@
 				type = number
 				initial value = 1
 	 			row = 1
-	 			column = 1   
+	 			column = 1
+				width = medium
+			)
+			Retention_Expiry_Date
+			(
+    			type = date
+				displayname = "Retention Expiry Date"
+    			description
+    			[
+    				type = help_text
+    			 	message = "SARS Tax Administration Act S29: 5-year retention from submission date."
+    			]
+				alloweddays = 0,1,2,3,4,5,6
+				private = true
+	 			row = 1
+	 			column = 1
 				width = medium
 			)
 			Parent_Claim_ID
@@ -626,15 +673,30 @@
 	 			column = 1   
 				width = medium
 			)
+			Risk_Level
+			(
+				type = picklist
+				displayname = "Risk Level"
+				values = {"Standard","Elevated","High"}
+				initial value = "Standard"
+    			description
+    			[
+    				type = help_text
+    			 	message = "ISO 37001: Categories prone to bribery risk receive enhanced scrutiny."
+    			]
+	 			row = 1
+	 			column = 1
+				width = medium
+			)
 			Active
 			(
     			type = checkbox
 				initial value = true
 	 			row = 1
-	 			column = 1   
+	 			column = 1
 				width = medium
 			)
-	
+
 			actions
 			{
 				on add
@@ -1253,9 +1315,28 @@
 											alert "At least one supporting document (receipt/invoice) is required.";
 											cancel submit;
 										}
-										// 5. All validations pass
+										// 5. Duplicate claim detection (COSO fraud risk)
+										duplicates = expense_claims[Expense_Date == input.Expense_Date && amount_zar == input.amount_zar && Added_User == zoho.loginuser && ID != input.ID];
+										if(duplicates != null && duplicates.count() > 0)
+										{
+											alert "Potential duplicate claim detected: same date, amount, and submitter already exists. Please verify this is not a duplicate.";
+										}
+										// 6. VAT invoice type enforcement (SARS)
+										if(input.amount_zar >= 5000 && input.VAT_Invoice_Type != "Full Tax Invoice (>= R5,000)")
+										{
+											alert "Claims of R5,000 or more require a Full Tax Invoice. Please update the VAT Invoice Type.";
+											cancel submit;
+										}
+										// 7. POPIA consent (mandatory)
+										if(input.POPIA_Consent == false)
+										{
+											alert "You must provide POPIA consent before submitting an expense claim.";
+											cancel submit;
+										}
+										// 8. All validations pass
 										input.status = "Submitted";
 										input.Submission_Date = zoho.currenttime;
+										input.Retention_Expiry_Date = input.Submission_Date.addYear(5);
 						)
 					}
 				}
@@ -1313,7 +1394,7 @@
 													actor="SYSTEM"
 													timestamp=zoho.currenttime
 													comments="LM did not act within 2 business days."
-													Added_User=zoho.loginuser
+													Added_User=zoho.adminuserid
 												];
 												sendmail
 												[
@@ -1346,7 +1427,7 @@
 			Line_Manager_Approval as "Line Manager Approval"
 			{
 				type =  approval
-				form = expense_claims[Parent_Claim_ID.status == "Pending LM Approval"]
+				form = expense_claims[status == "Pending LM Approval"]
 				display fields = [Employee_Name1,Email,Submission_Date,claim_id,Claim_Reference,Expense_Date,department]
 				on start
 				{

@@ -2,8 +2,8 @@
 // Script:   expense_claim.on_validate.dg
 // Location: Expense_Claim form > Workflow > On Validate
 // Trigger:  Form submission (before save)
-// Purpose:  Hard-stop validation: future dates, 90-day window, positive amount, mandatory receipt (SARS S11(a))
-// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Purpose:  Hard-stop validation: future dates, 90-day window, positive amount, mandatory receipt, VAT type, POPIA consent, duplicate detection
+// Version:  v3.0 (Governance Gap Remediation)
 // ============================================================
 
 // 1. No future expense dates
@@ -35,6 +35,28 @@ if (input.Supporting_Documents == null || input.Supporting_Documents == "")
     cancel submit;
 }
 
-// 5. All validations pass - set initial status
+// 5. Duplicate claim detection (COSO fraud risk)
+duplicates = expense_claims[Expense_Date == input.Expense_Date && amount_zar == input.amount_zar && Added_User == zoho.loginuser && ID != input.ID];
+if (duplicates != null && duplicates.count() > 0)
+{
+    alert "Potential duplicate claim detected: same date, amount, and submitter already exists. Please verify this is not a duplicate.";
+}
+
+// 6. VAT invoice type enforcement (SARS)
+if (input.amount_zar >= 5000 && input.VAT_Invoice_Type != "Full Tax Invoice (>= R5,000)")
+{
+    alert "Claims of R5,000 or more require a Full Tax Invoice. Please update the VAT Invoice Type.";
+    cancel submit;
+}
+
+// 7. POPIA consent (mandatory)
+if (input.POPIA_Consent == false)
+{
+    alert "You must provide POPIA consent before submitting an expense claim.";
+    cancel submit;
+}
+
+// 8. All validations pass - set initial status
 input.status = "Submitted";
 input.Submission_Date = zoho.currenttime;
+input.Retention_Expiry_Date = input.Submission_Date.addYear(5);

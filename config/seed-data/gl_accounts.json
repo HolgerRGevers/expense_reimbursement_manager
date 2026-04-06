@@ -1,9 +1,9 @@
 [
-  { "GL_Code": "6200", "Account_Name": "Travel - Local Transport", "Expense_Category": "Travel - Local", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Active": true },
-  { "GL_Code": "6210", "Account_Name": "Travel - Long Distance", "Expense_Category": "Travel - Long Distance", "SARS_Provision": "S11(a) + S8(1)(a)", "Receipt_Required": true, "Active": true },
-  { "GL_Code": "6220", "Account_Name": "Accommodation", "Expense_Category": "Accommodation", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Active": true },
-  { "GL_Code": "6300", "Account_Name": "Meals & Entertainment", "Expense_Category": "Meals & Entertainment", "SARS_Provision": "S11(a) - 50% limitation", "Receipt_Required": true, "Active": true },
-  { "GL_Code": "6400", "Account_Name": "Office Supplies", "Expense_Category": "Office Supplies", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Active": true },
-  { "GL_Code": "6500", "Account_Name": "Communication (Airtime/Data)", "Expense_Category": "Communication", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Active": true },
-  { "GL_Code": "6600", "Account_Name": "Client Entertainment", "Expense_Category": "Client Entertainment", "SARS_Provision": "S11(a) - 50% limitation", "Receipt_Required": true, "Active": true }
+  { "GL_Code": "6200", "Account_Name": "Travel - Local Transport", "Expense_Category": "Travel - Local", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Risk_Level": "Standard", "Active": true },
+  { "GL_Code": "6210", "Account_Name": "Travel - Long Distance", "Expense_Category": "Travel - Long Distance", "SARS_Provision": "S11(a) + S8(1)(a)", "Receipt_Required": true, "Risk_Level": "Standard", "Active": true },
+  { "GL_Code": "6220", "Account_Name": "Accommodation", "Expense_Category": "Accommodation", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Risk_Level": "Standard", "Active": true },
+  { "GL_Code": "6300", "Account_Name": "Meals & Entertainment", "Expense_Category": "Meals & Entertainment", "SARS_Provision": "S11(a) - 50% limitation", "Receipt_Required": true, "Risk_Level": "High", "Active": true },
+  { "GL_Code": "6400", "Account_Name": "Office Supplies", "Expense_Category": "Office Supplies", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Risk_Level": "Standard", "Active": true },
+  { "GL_Code": "6500", "Account_Name": "Communication (Airtime/Data)", "Expense_Category": "Communication", "SARS_Provision": "S11(a)", "Receipt_Required": true, "Risk_Level": "Standard", "Active": true },
+  { "GL_Code": "6600", "Account_Name": "Client Entertainment", "Expense_Category": "Client Entertainment", "SARS_Provision": "S11(a) - 50% limitation", "Receipt_Required": true, "Risk_Level": "High", "Active": true }
 ]

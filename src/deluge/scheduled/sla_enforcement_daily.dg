@@ -25,7 +25,7 @@ for each claim in pendingClaims
             actor = "SYSTEM"
             timestamp = zoho.currenttime
             comments = "Line Manager did not act within 3 days. Auto-escalated to HoD."
-            Added_User = zoho.loginuser
+            Added_User = zoho.adminuserid
         ];
 
         sendmail

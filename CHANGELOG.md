@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-04-06
+
+### Added
+- Governance gap remediation: 12 of 16 gaps implemented in .ds export
+  - G-03: Fixed approval trigger from Parent_Claim_ID.status to status
+  - G-04: Added Tier_Order field to Approval_Thresholds form
+  - G-06: Added VAT_Invoice_Type picklist + On Validate enforcement (SARS R5,000 threshold)
+  - G-09: Added Retention_Expiry_Date field (SARS S29 5-year retention)
+  - G-10: Added POPIA_Consent checkbox with privacy notice + On Validate enforcement
+  - G-11: Fixed SLA Added_User from zoho.loginuser to zoho.adminuserid
+  - G-15: Added duplicate claim detection to On Validate (COSO fraud risk)
+  - G-16: Added Risk_Level picklist to GL_Accounts (ISO 37001 anti-bribery)
+- New fields in seed data: Tier_Order (approval_thresholds), Risk_Level (gl_accounts)
+- On Validate script expanded from 5 to 8 validation checks
+
+### Changed
+- Linter DG007 rule now accepts zoho.adminuserid for scheduled task scripts
+- Linter DB expanded to 47 form fields (was 42)
+- expense_claim.on_validate.dg updated to v3.0 (Governance Gap Remediation)
+
 ## [0.3.0] - 2026-04-06
 
 ### Added
