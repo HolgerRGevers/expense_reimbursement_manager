@@ -58,6 +58,41 @@ This is a significant finding: **the .ds import pipeline normalises/resets field
 - For script changes: edit `.dg` files in this repo, paste into Creator UI
 - For structural changes (fields, permissions, defaults): must be done in Creator Settings
 
-### What to try next
-- **UNCERTAIN**: Whether Creator preserves Deluge script edits in the .ds on import (our experiment only tested structural/permission changes, not script code changes)
-- A follow-up experiment could modify an embedded workflow script in the .ds and test whether that change persists after import
+---
+
+## Round 2: Deluge Script Edit
+
+### Edit 5: Claim Reference Prefix
+**What**: Changed `"EXP-"` to `"EXP2-"` in Generate_Claim_Reference workflow script
+**Line**: 1085 in .ds (inside `custom deluge script ( ... )` block)
+**Risk**: Zero -- cosmetic string change on test account
+
+### Round 2 Results
+
+| Edit | Import Status | Persisted? | Verification |
+|------|--------------|------------|-------------|
+| EXP- to EXP2- | Accepted | **YES** | Zoho re-export line 1085: `claim_reference = "EXP2-" + padded;` |
+
+### Round 2 Conclusion
+
+**Deluge script edits PERSIST through .ds import.** Creator faithfully ingests embedded code blocks.
+
+This means:
+- **Structural changes** (field defaults, permissions, allow-new-entries): REVERTED on import -- must use Creator UI
+- **Deluge script code**: PRESERVED on import -- can be deployed via .ds file
+
+### Revised Deployment Model
+
+| Change type | Deploy via .ds? | Deploy via Creator UI? |
+|-------------|----------------|----------------------|
+| Field attribute changes | NO | YES |
+| Permission / share_settings | NO | YES |
+| New fields | UNCERTAIN (not tested) | YES |
+| Deluge workflow scripts | **YES** | YES |
+| Approval process scripts | **LIKELY YES** (same format, not yet tested) | YES |
+| Scheduled task scripts | **LIKELY YES** (same format, not yet tested) | YES |
+
+### What this unlocks
+1. We can edit .dg files in this repo, sync them into the .ds, and import to Creator
+2. The `parse_ds_export.py` tool can be extended to **inject** .dg scripts back into .ds files
+3. This is a viable path toward semi-automated Deluge deployment -- the OmegaScript vision's edit-apply workflow becomes practical for script changes
