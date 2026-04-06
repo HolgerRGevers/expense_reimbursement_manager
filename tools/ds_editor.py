@@ -273,27 +273,19 @@ def restrict_menus(ds_path: Path, report_names: list[str]) -> int:
                     i += 1
                     continue
 
-            # Remove menu items from record blocks
+            # Remove entire record block (keyword + parens + content)
             if stripped == "record":
-                new_lines.append(line)
+                # Skip "record" line
                 i += 1
                 if i < len(lines) and lines[i].strip() == "(":
-                    new_lines.append(lines[i])
+                    # Skip everything until matching )
                     depth = 1
                     i += 1
                     while i < len(lines) and depth > 0:
-                        s = lines[i].strip()
-                        depth += s.count("(") - s.count(")")
-                        if depth <= 0:
-                            new_lines.append(lines[i])
-                            break
-                        if s in MENU_ITEMS_TO_REMOVE:
-                            i += 1
-                            continue
-                        new_lines.append(lines[i])
+                        depth += lines[i].strip().count("(") - lines[i].strip().count(")")
                         i += 1
-                    i += 1
                     continue
+                continue
 
             # Remove entire right-click blocks
             if stripped == "on right click":
