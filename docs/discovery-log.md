@@ -96,3 +96,49 @@ Each entry feeds back into CLAUDE.md, the linter, and deluge-reference.md.
 3. Import and verify
 4. If good, commit and use as new baseline
 5. Apply next change type on top
+
+---
+
+## DL-005: Report menu/action block edits -- unresolved, needs more research
+
+**Date**: 2026-04-07
+**Status**: UNRESOLVED
+**Source**: Multiple failed imports when modifying report quickview/detailview menu blocks
+
+**What we tried so far**:
+- Removing menu items (Edit/Delete/Duplicate) from header blocks
+- Removing entire `record ( ... )` blocks
+- Removing `on right click ( ... )` blocks
+- Matching exact Audit_Trail restricted pattern
+- Single-report and multi-report changes
+- All approaches produced "A problem encountered while creating the application"
+
+**What we observed works as a workaround**:
+- Creator auto-restricts reference/audit report menus when boilerplate kanban reports are removed
+- Role-based report permissions in `share_settings` DO persist via .ds
+- Creator UI allows direct menu restriction
+
+**Hypothesis**: The menu/record/action blocks have mixed-whitespace formatting (tabs + spaces + trailing whitespace) that our tools don't reproduce exactly. The .ds parser may be sensitive to byte-level whitespace matching in these specific blocks.
+
+**Next steps to investigate**:
+1. Diff a known-good .ds menu block byte-for-byte against our generated version using `xxd` or similar
+2. Try preserving exact original whitespace when editing (read-modify-write at byte level, not line level)
+3. Try adding empty `record ( )` blocks (which Zoho generates itself) instead of removing them
+4. Research whether Creator's import has an undocumented validation layer for report config blocks
+
+**Current workaround**: Use share_settings for permissions, report removal for menu simplification, Creator UI for fine-grained menu control.
+
+**Updated .ds import capability matrix**:
+
+| Change type | Works? | Tested |
+|-------------|--------|--------|
+| Field defaults (initial value) | YES | Round 3 |
+| Field attributes (allow new entries) | YES | Round 3 |
+| Permission / share_settings (readonly) | YES | Round 3 |
+| Deluge workflow scripts | YES | Round 2 |
+| Approval trigger conditions | YES | v0.4.0 |
+| New fields on existing forms | YES | v0.4.0 (5 fields) |
+| New validation logic in scripts | YES | v0.4.0 |
+| Field descriptions (help_text) | YES | v0.5.0 |
+| Report removal (kanban/list) | YES | v0.5.0 |
+| Report menu/action block edits | UNRESOLVED | v0.5.0 (needs more research) |
