@@ -1,78 +1,84 @@
 # Field Link Names
 
+Auto-generated from `.ds` export by `tools/parse_ds_export.py`.
+
 ## Overview
 
 Verified field link name mapping extracted from the `.ds` export. These are the actual Deluge-accessible field identifiers used in scripts.
 
-## Expense_Claims
+## Approval History (`approval_history`)
 
-| Link Name | Display Name | Type |
-|-----------|-------------|------|
-| Employee_Name1 | Employee Name | Name (first_name, last_name) |
-| Email | Email | Picklist (users module) |
-| Submission_Date | Submission Date | Datetime |
-| claim_id | Claim ID | Autonumber |
-| department | Department | List -> departments.ID |
-| Claim_Reference | Claim Reference | Text |
-| client | Client | List -> clients.ID |
-| Expense_Date | Expense Date | Date |
-| Department_Shadow | Department Shadow | Text (private) |
-| category | Category | Picklist |
-| Client_Shadow | Client Shadow | Text (private) |
-| amount_zar | Amount ZAR | Currency (ZAR) |
-| Supporting_Documents | Supporting Documents | File Upload |
-| description | Description | Textarea |
-| status | Status | Picklist |
-| Rejection_Reason | Rejection Reason | Textarea |
-| Version | Version | Number |
-| Parent_Claim_ID | Parent Claim ID | Picklist -> expense_claims.ID |
-| gl_code | GL Code | List -> gl_accounts.ID |
+| Link Name | Display Name | Type | Notes |
+|-----------|-------------|------|-------|
+| claim | Add New | list |  |
+| action_1 | Action | picklist |  |
+| actor | Actor | text |  |
+| timestamp | Timestamp | datetime |  |
+| comments | Comments | textarea |  |
 
-## Approval_History
+## Approval Thresholds (`approval_thresholds`)
 
-| Link Name | Display Name | Type |
-|-----------|-------------|------|
-| claim | Claim | List -> expense_claims.ID |
-| action_1 | Action | Picklist |
-| actor | Actor | Text |
-| timestamp | Timestamp | Datetime |
-| comments | Comments | Textarea |
+| Link Name | Display Name | Type | Notes |
+|-----------|-------------|------|-------|
+| tier_name | Tier Name | text |  |
+| max_amount_zar | Max Amount ZAR | ZAR |  |
+| approver_role | Approver Role | text |  |
+| Active | Active | checkbox | default: true |
 
-## Approval_Thresholds
+## Clients (`clients`)
 
-| Link Name | Display Name | Type |
-|-----------|-------------|------|
-| tier_name | Tier Name | Text |
-| max_amount_zar | Max Amount ZAR | Currency (ZAR) |
-| approver_role | Approver Role | Text |
-| Active | Active | Checkbox |
+| Link Name | Display Name | Type | Notes |
+|-----------|-------------|------|-------|
+| client_id | Client ID | autonumber |  |
+| name | Name | text |  |
+| is_active | Active | checkbox | default: true |
 
-## GL_Accounts
+## Departments (`departments`)
 
-| Link Name | Display Name | Type |
-|-----------|-------------|------|
-| gl_code | GL Code | Text |
-| account_name | Account Name | Text |
-| expense_category | Expense Category | Picklist |
-| receipt_required | Receipt Required | Checkbox |
-| SARS_Provision | SARS Provision | Text |
-| Active | Active | Checkbox |
+| Link Name | Display Name | Type | Notes |
+|-----------|-------------|------|-------|
+| department_id | Department ID | autonumber |  |
+| name | Name | text |  |
+| is_active | Active | checkbox | default: true |
 
-## Departments
+## Expense Claims (`expense_claims`)
 
-| Link Name | Display Name | Type |
-|-----------|-------------|------|
-| department_id | Department ID | Autonumber |
-| name | Name | Text |
-| is_active | Active | Checkbox |
+| Link Name | Display Name | Type | Notes |
+|-----------|-------------|------|-------|
+| Employee_Name1 | Suffix | suffix | personal data |
+| prefix | Prefix | prefix |  |
+| first_name | First Name | first_name |  |
+| last_name | Last Name | last_name |  |
+| suffix | Suffix | suffix |  |
+| Email | Email | help_text | personal data |
+| Submission_Date | Submission Date | datetime |  |
+| claim_id | Claim ID | autonumber |  |
+| department | Department | list |  |
+| Claim_Reference | Claim Reference | text |  |
+| client | Add New | list |  |
+| Expense_Date | Expense Date | date |  |
+| Department_Shadow | Department Shadow | text | private/hidden |
+| category | Category | picklist |  |
+| Client_Shadow | Client Shadow | text | private/hidden |
+| amount_zar | Amount ZAR | ZAR |  |
+| Supporting_Documents | Supporting Documents | upload file |  |
+| description | Description | textarea |  |
+| status | Status | picklist |  |
+| Rejection_Reason | Rejection Reason | textarea |  |
+| Version | Version | number | default: 1 |
+| Parent_Claim_ID | Parent Claim ID | picklist | private/hidden |
+| gl_code | Add New | list |  |
 
-## Clients
+## GL Accounts (`gl_accounts`)
 
-| Link Name | Display Name | Type |
-|-----------|-------------|------|
-| client_id | Client ID | Autonumber |
-| name | Name | Text |
-| is_active | Active | Checkbox |
+| Link Name | Display Name | Type | Notes |
+|-----------|-------------|------|-------|
+| gl_code | GL Code | text |  |
+| account_name | Account Name | text |  |
+| expense_category | Expense Category | picklist |  |
+| receipt_required | Receipt Required | checkbox | default: false |
+| SARS_Provision | SARS Provision | help_text |  |
+| Active | Active | checkbox | default: true |
 
 ## Notes
 

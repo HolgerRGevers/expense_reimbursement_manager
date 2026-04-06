@@ -1,0 +1,106 @@
+# Deluge Script Manifest
+# Source of truth for script metadata. Used by tools/scaffold_deluge.py
+# to generate .dg file headers and boilerplate.
+
+scripts:
+  # --- Form Workflows ---
+  - name: expense_claim.on_validate
+    location: "Expense_Claim form > Workflow > On Validate"
+    trigger: "Form submission (before save)"
+    purpose: "Hard-stop validation: future dates, 90-day window, positive amount, mandatory receipt (SARS S11(a))"
+    form: expense_claims
+    event: on_validate
+    context: form-workflow
+    includes: []
+
+  - name: expense_claim.on_success
+    location: "Expense_Claim form > Workflow > On Success"
+    trigger: "After successful form submission"
+    purpose: "Self-approval prevention (King IV P1), routing, audit trail, LM notification"
+    form: expense_claims
+    event: on_success
+    context: form-workflow
+    includes: [self-approval, audit-trail, sendmail]
+
+  - name: expense_claim.on_edit
+    location: "Expense_Claim form > Workflow > On Edit"
+    trigger: "Record edit/save"
+    purpose: "Resubmission handler: version increment, status reset, self-approval check"
+    form: expense_claims
+    event: on_edit
+    context: form-workflow
+    includes: [self-approval, audit-trail, sendmail]
+
+  - name: expense_claim.on_load.auto_populate
+    location: "Expense_Claim form > Workflow > On Load"
+    trigger: "Form load (on add)"
+    purpose: "Auto-populate Employee_Name and Email from logged-in user"
+    form: expense_claims
+    event: on_load
+    context: form-workflow
+    includes: []
+
+  - name: expense_claim.on_success.generate_ref
+    location: "Expense_Claim form > Workflow > On Success"
+    trigger: "After successful form submission"
+    purpose: "Auto-generate claim reference in EXP-0005 format"
+    form: expense_claims
+    event: on_success
+    context: form-workflow
+    includes: []
+
+  - name: expense_claim.on_success.fill_shadows
+    location: "Expense_Claim form > Workflow > On Success"
+    trigger: "After successful form submission or edit"
+    purpose: "Populate denormalized shadow text fields for Department and Client"
+    form: expense_claims
+    event: on_success
+    context: form-workflow
+    includes: []
+
+  # --- Approval Scripts ---
+  - name: lm_approval.on_approve
+    location: "Approval Process > Line Manager Approval > Level 1 > On Approve"
+    trigger: "Approver clicks Approve"
+    purpose: "Threshold-based conditional routing. Under threshold = final approval + GL. Over = escalate to HoD."
+    form: expense_claims
+    event: on_approve
+    context: approval-script
+    includes: [threshold-check, gl-lookup, audit-trail, sendmail]
+
+  - name: lm_approval.on_reject
+    location: "Approval Process > Line Manager Approval > Level 1 > On Reject"
+    trigger: "Approver clicks Reject"
+    purpose: "Set status to Rejected, log audit trail, notify employee"
+    form: expense_claims
+    event: on_reject
+    context: approval-script
+    includes: [audit-trail, sendmail]
+
+  - name: hod_approval.on_approve
+    location: "Approval Process > HoD Approval > Level 1 > On Approve"
+    trigger: "Approver clicks Approve"
+    purpose: "Final approval, GL code population, audit trail, notification"
+    form: expense_claims
+    event: on_approve
+    context: approval-script
+    includes: [gl-lookup, audit-trail, sendmail]
+
+  - name: hod_approval.on_reject
+    location: "Approval Process > HoD Approval > Level 1 > On Reject"
+    trigger: "Approver clicks Reject"
+    purpose: "Set status to Rejected, log audit trail, notify employee"
+    form: expense_claims
+    event: on_reject
+    context: approval-script
+    includes: [audit-trail, sendmail]
+
+  # --- Scheduled ---
+  - name: sla_enforcement_daily
+    location: "Workflow > Schedules > SLA_Enforcement_Daily"
+    trigger: "Scheduled (daily)"
+    purpose: "SLA enforcement: 2-day reminder, 3-day auto-escalation to HoD"
+    form: expense_claims
+    event: scheduled
+    context: scheduled
+    includes: [audit-trail, sendmail]

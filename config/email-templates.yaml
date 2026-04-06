@@ -1,0 +1,69 @@
+# Email Templates for Deluge sendmail blocks
+# Used by tools/scaffold_deluge.py to generate sendmail boilerplate.
+# {{claim_id}}, {{amount}}, {{employee_name}}, {{reason}} are template vars.
+
+roles:
+  line_manager: "linemanager.demo@yourdomain.com"
+  hod: "hod.demo@yourdomain.com"
+
+templates:
+  # --- Submission ---
+  submit_notify_lm:
+    to_role: line_manager
+    subject: 'Expense Claim " + input.claim_id + " requires your approval'
+    message: '"Employee: " + input.Employee_Name1 + "\nAmount: R" + input.amount_zar'
+
+  submit_self_approval_bypass:
+    to_role: hod
+    subject: 'Expense Claim " + input.claim_id + " - Direct HoD Review'
+    message: '"Submitted by a Line Manager. Self-approval prevention engaged."'
+
+  # --- Resubmission ---
+  resubmit_notify_lm:
+    to_role: line_manager
+    subject: '"RESUBMITTED - Claim " + input.claim_id + " (v" + input.Version + ")"'
+    message: '"Edited and resubmitted for approval."'
+
+  resubmit_self_approval_bypass:
+    to_role: hod
+    subject: '"RESUBMITTED - Claim " + input.claim_id + " (v" + input.Version + ") - Direct HoD Review"'
+    message: '"Resubmitted by a Line Manager. Self-approval prevention engaged."'
+
+  # --- LM Approval ---
+  lm_approved_final:
+    to_field: input.Email
+    subject: '"Expense Claim " + input.claim_id + " - Approved"'
+    message: '"Your claim for R" + input.amount_zar + " has been approved."'
+
+  lm_approved_escalate:
+    to_role: hod
+    subject: '"Expense Claim " + input.claim_id + " - Requires HoD Approval"'
+    message: '"LM approved. Amount R" + input.amount_zar + " exceeds threshold. Awaiting HoD review."'
+
+  lm_rejected:
+    to_field: input.Email
+    subject: '"Expense Claim " + input.claim_id + " - Rejected"'
+    message: '"Your claim for R" + input.amount_zar + " has been rejected.\nReason: " + rejectReason + "\nYou may edit and resubmit."'
+
+  # --- HoD Approval ---
+  hod_approved:
+    to_field: input.Email
+    subject: '"Expense Claim " + input.claim_id + " - Final Approval"'
+    message: '"Your claim for R" + input.amount_zar + " has received final approval."'
+
+  hod_rejected:
+    to_field: input.Email
+    subject: '"Expense Claim " + input.claim_id + " - Rejected by HoD"'
+    message: '"Your claim for R" + input.amount_zar + " has been rejected by the Head of Department.\nReason: " + rejectReason + "\nYou may edit and resubmit."'
+
+  # --- SLA ---
+  sla_escalation:
+    to_role: hod
+    subject: '"SLA BREACH - Claim " + claim.claim_id + " escalated"'
+    message: '"LM failed to act within 3 days.\nAmount: R" + claim.amount_zar'
+
+  sla_reminder:
+    to_role: line_manager
+    cc_role: hod
+    subject: '"REMINDER - Claim " + claim.claim_id + " awaiting approval"'
+    message: '"Pending >2 days. Auto-escalates at 3 days."'

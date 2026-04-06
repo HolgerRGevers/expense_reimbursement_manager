@@ -19,13 +19,25 @@ No CI/CD — Creator has no structural deployment API. Code is applied manually 
 - Strings use double quotes only (never single quotes)
 - `ifnull(value, fallback)` for every query result
 
-## Linting
-After editing any .dg file, run:
+## Tooling workflow
+After editing any .dg file:
 ```
-python tools/lint_deluge.py src/deluge/
+python tools/lint_deluge.py src/deluge/              # lint
+python tools/lint_deluge.py --fix src/deluge/        # auto-fix then lint
 ```
 Exit 0 = clean. Exit 1 = warnings. Exit 2 = errors (must fix before proceeding).
-If errors found: fix them iteratively and re-run until clean, then ask the user what to do next.
+If errors found: try `--fix` first, then fix remaining manually and re-run until clean.
+
+Before creating a new .dg file, scaffold it:
+```
+python tools/scaffold_deluge.py --name SCRIPT_NAME   # from manifest
+python tools/scaffold_deluge.py --list                # show all manifest entries
+```
+
+After a new .ds export from Creator:
+```
+python tools/parse_ds_export.py exports/FILE.ds --generate-field-docs docs/build-guide/ --extract-scripts src/deluge/
+```
 
 If the linter DB is missing, rebuild it:
 ```

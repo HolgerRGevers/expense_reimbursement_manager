@@ -713,6 +713,92 @@ def check_dg005(filename: str, lines: list[str]) -> list[Diagnostic]:
 
 
 # ============================================================
+# Auto-fix engine
+# ============================================================
+
+FIXABLE_RULES = {"DG006", "DG007", "DG008"}
+
+
+def fix_file(db: DelugeDB, filepath: str) -> tuple[list[str], int]:
+    """Apply auto-fixes to a file. Returns (fixed_lines, fix_count)."""
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            lines = [line.rstrip("\n\r") for line in f.readlines()]
+    except (OSError, UnicodeDecodeError):
+        return [], 0
+
+    fix_count = 0
+
+    # Fix DG008: single quotes for text -> double quotes
+    for i, line in enumerate(lines):
+        if is_comment_line(line):
+            continue
+        new_line = _fix_single_quotes(line)
+        if new_line != line:
+            lines[i] = new_line
+            fix_count += 1
+
+    # Fix DG006: add missing Added_User to approval_history inserts
+    # Fix DG007: correct wrong Added_User value
+    blocks = extract_blocks(lines)
+    for block in blocks:
+        if block.block_type != "insert" or block.target_table != "approval_history":
+            continue
+
+        if "Added_User" not in block.fields:
+            # Insert Added_User before the closing ]
+            insert_at = block.end_line - 1  # 0-based index of ] line
+            indent = "    "
+            # Find indentation from existing field lines
+            for fa in block.fields.values():
+                existing_line = lines[fa.line - 1]
+                indent = existing_line[: len(existing_line) - len(existing_line.lstrip())]
+                break
+            lines.insert(insert_at, f"{indent}Added_User = zoho.loginuser")
+            fix_count += 1
+            # Adjust subsequent line numbers (blocks after this shift by 1)
+
+        elif block.fields["Added_User"].value.strip() != "zoho.loginuser":
+            # Fix wrong value
+            fa = block.fields["Added_User"]
+            line_idx = fa.line - 1
+            lines[line_idx] = re.sub(
+                r"Added_User\s*=\s*\S+",
+                "Added_User = zoho.loginuser",
+                lines[line_idx],
+            )
+            fix_count += 1
+
+    return lines, fix_count
+
+
+def _fix_single_quotes(line: str) -> str:
+    """Replace single-quoted text strings with double quotes (not dates/times)."""
+    def _replacer(m: re.Match[str]) -> str:
+        content = m.group(1)
+        if not content:
+            return m.group(0)
+        if DATE_PATTERN.match(content) or TIME_PATTERN.match(content):
+            return m.group(0)
+        return f'"{content}"'
+
+    return re.sub(r"'([^']*)'", _replacer, line)
+
+
+def apply_fixes(db: DelugeDB, files: list[str]) -> int:
+    """Apply auto-fixes to all files. Returns total fix count."""
+    total = 0
+    for filepath in files:
+        fixed_lines, count = fix_file(db, filepath)
+        if count > 0:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write("\n".join(fixed_lines) + "\n")
+            print(f"  Fixed {count} issue(s) in {filepath}")
+            total += count
+    return total
+
+
+# ============================================================
 # Main pipeline
 # ============================================================
 
@@ -769,6 +855,10 @@ def main() -> None:
         "--errors-only", action="store_true",
         help="Only show ERROR severity",
     )
+    parser.add_argument(
+        "--fix", action="store_true",
+        help=f"Auto-fix fixable rules ({', '.join(sorted(FIXABLE_RULES))}), then re-lint",
+    )
     args = parser.parse_args()
 
     files = resolve_files(args.paths)
@@ -777,6 +867,16 @@ def main() -> None:
         sys.exit(0)
 
     db = DelugeDB(DB_PATH)
+
+    # Auto-fix pass
+    if args.fix:
+        print("Auto-fixing...")
+        total_fixes = apply_fixes(db, files)
+        if total_fixes:
+            print(f"Applied {total_fixes} fix(es). Re-linting...\n")
+        else:
+            print("No auto-fixable issues found.\n")
+
     all_diags: list[Diagnostic] = []
     try:
         for filepath in files:

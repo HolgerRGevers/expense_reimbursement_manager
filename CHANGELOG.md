@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-04-06
+
+### Added
+- `.ds` export parser (`tools/parse_ds_export.py`) — extracts forms, fields, and embedded scripts from Creator exports
+  - Auto-generates `docs/build-guide/field-link-names.md` from .ds metadata
+  - Extracts embedded Deluge workflow scripts to standalone .dg files
+  - Outputs field data as JSON for database integration
+- Script scaffolder (`tools/scaffold_deluge.py`) — generates .dg boilerplate from manifest
+  - Pre-fills: header, audit trail blocks, sendmail blocks, self-approval checks, GL lookups, threshold patterns
+  - Reads from `config/deluge-manifest.yaml` for script metadata
+- Linter auto-fix mode (`--fix` flag) — automatically repairs DG006, DG007, DG008
+  - Adds missing `Added_User = zoho.loginuser` to approval_history inserts
+  - Corrects wrong Added_User values
+  - Converts single-quoted text strings to double quotes
+- Configuration files:
+  - `config/deluge-manifest.yaml` — script metadata for scaffolder
+  - `config/email-templates.yaml` — centralised email template definitions
+
 ## [0.2.1] - 2026-04-06
 
 ### Changed
