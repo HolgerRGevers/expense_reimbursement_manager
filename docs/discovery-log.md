@@ -69,4 +69,30 @@ Each entry feeds back into CLAUDE.md, the linter, and deluge-reference.md.
 - Adding new workflows/approval processes
 - Deleting fields or forms
 - Renaming fields
-- Modifying report definitions
+
+---
+
+## DL-004: Combined .ds edits can cause untraceable import failures
+
+**Date**: 2026-04-07
+**Source**: v0.5.0 import failure -- "A problem encountered while creating the application"
+
+**What happened**: Applied 3 change types in one .ds edit (field descriptions + report removal + menu restriction = 316 deletions, 185 insertions). Creator rejected the import with a generic error and no line number.
+
+**Root cause**: UNCERTAIN -- the error message gives no specifics. Most likely the report removal or menu restriction left a dangling reference or broke an expected structural pattern.
+
+**Recovery**: Reverted to v0.4.0 known-good .ds, reapplied descriptions only. Import succeeded.
+
+**Rule**: Apply .ds changes **one type at a time**, test each import separately. Never combine structural changes (report deletion, menu edits) with content changes (field descriptions) in a single .ds edit.
+
+**Actions taken**:
+- Adopted incremental branching strategy for .ds changes
+- Each change type gets its own commit and import test
+- Added to CLAUDE.md and ui-standards.md
+
+**How to apply**: When editing .ds files:
+1. Start from a known-good .ds (last successful import)
+2. Apply ONE type of change
+3. Import and verify
+4. If good, commit and use as new baseline
+5. Apply next change type on top
