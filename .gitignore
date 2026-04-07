@@ -28,6 +28,15 @@ exports/*.accdb
 # Generated databases (rebuild with: python tools/build_deluge_db.py)
 tools/deluge_lang.db
 
+# Generated databases (rebuild with: python tools/build_access_vba_db.py)
+tools/access_vba_lang.db
+
+# Zoho API credentials (NEVER commit)
+config/zoho-api.yaml
+
+# CSV exports for Zoho import
+exports/csv/
+
 # Build artifacts
 dist/
 build/

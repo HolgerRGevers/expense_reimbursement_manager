@@ -65,7 +65,54 @@ python tools/parse_ds_export.py exports/FILE.ds --generate-field-docs docs/build
 If the linter DB is missing, rebuild it:
 ```
 python tools/build_deluge_db.py
+python tools/build_access_vba_db.py
 ```
+
+## Access/VBA tooling workflow
+After editing any .sql file:
+```
+python tools/lint_access.py src/access/              # lint all .sql files
+python tools/lint_access.py path/to/file.sql         # lint one file
+```
+
+Build the Access/VBA language database:
+```
+python tools/build_access_vba_db.py                  # creates tools/access_vba_lang.db
+python tools/build_access_vba_db.py --force           # recreate from scratch
+```
+
+Run hybrid linter (cross-environment Access<->Zoho validation):
+```
+python tools/lint_hybrid.py                           # schema validation only
+python tools/lint_hybrid.py --data exports/csv/       # + data validation
+python tools/lint_hybrid.py --data exports/csv/ --scripts src/deluge/  # + script cross-ref
+```
+
+## Access-to-Zoho import workflow
+1. Export Access tables to CSV (Windows only):
+```
+python tools/export_access_csv.py exports/ERM.accdb --output-dir exports/csv/
+```
+2. Validate data before upload:
+```
+python tools/validate_access_data.py exports/csv/ --check-picklists --check-refs
+```
+3. Upload to Zoho Creator (mock mode by default):
+```
+python tools/upload_to_creator.py --config config/zoho-api.yaml --csv-dir exports/csv/
+python tools/upload_to_creator.py --config config/zoho-api.yaml --csv-dir exports/csv/ --live
+```
+
+See `docs/imports/access-to-zoho-import-guide.md` for detailed pathway documentation.
+
+## Key Access/VBA rules (always follow these)
+- Access uses `=` for equality (not `==`)
+- Access uses `-1`/`0` for Boolean (Zoho uses `true`/`false`)
+- Access CURRENCY has exactly 4 decimal places (fixed-point)
+- Access has no timezone awareness for DATETIME fields
+- Access SQL reserved words must be bracket-escaped: `[Select]`, `[From]`
+- Zoho field `action_1` maps to Access `Action_Type` (NOT `action`)
+- `config/zoho-api.yaml` must NEVER be committed (contains secrets)
 
 For UI/accessibility changes to .ds files:
 ```
@@ -85,8 +132,12 @@ python tools/ds_editor.py restrict-menus exports/FILE.ds --reports name1,name2
 ## Repo structure convention
 - `src/deluge/` — scripts organised by Creator UI location (form-workflows, approval-scripts, scheduled)
 - `docs/` — architecture, compliance, build-guide, testing
+- `docs/imports/` — Access-to-Zoho import guides, type mapping reference, API upload guide
 - `config/seed-data/` — JSON source of truth for lookup/config tables
+- `config/zoho-api.yaml.template` — template for API credentials (copy to zoho-api.yaml)
 - `exports/` — manual .ds snapshots from Creator
+- `exports/csv/` — CSV exports from Access for Zoho import (gitignored)
+- `tests/` — linter test fixtures (.dg, .sql)
 
 ## Governance context
 South African compliance: King IV principles, SARS S11(a), segregation of duties.
