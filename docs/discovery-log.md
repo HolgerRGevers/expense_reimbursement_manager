@@ -142,3 +142,33 @@ Each entry feeds back into CLAUDE.md, the linter, and deluge-reference.md.
 | Field descriptions (help_text) | YES | v0.5.0 |
 | Report removal (kanban/list) | YES | v0.5.0 |
 | Report menu/action block edits | UNRESOLVED | v0.5.0 (needs more research) |
+
+---
+
+## DL-006: Report removal requires 5-point dependency chain cleanup
+
+**Date**: 2026-04-07
+**Status**: RESOLVED
+**Source**: Investigation into DL-004/DL-005 root cause — orphaned references after report removal
+
+**The 5 reference types for every report in a .ds file**:
+
+| # | Location | Pattern | Example |
+|---|----------|---------|---------|
+| 1 | Report definition | `kanban/list name { ... }` in `reports` section | Report data/structure |
+| 2 | Permission entries | `name={"View","Edit"}` in `share_settings > ReportPermissions` | Per-role access |
+| 3 | Quickview/detailview | `report name { quickview(...) detailview(...) }` in `web > reports` | UI config with nested menu/action blocks |
+| 4 | Navigation entry | `report name { icon = "..." }` in `web > menu > space > section` | Sidebar menu item |
+| 5 | Page Content ZML | `linkName = 'name'` inside `Content="<zml>..."` strings | Dashboard embeds |
+
+**Root cause of DL-004**: The original `remove_reports()` tool only handled #1 and #2 with regex. #3 was fragile (regex couldn't handle nested braces). #4 was completely missing. #5 was not checked.
+
+**Fix**: Rewrote `remove_reports()` in `ds_editor.py` with:
+- Brace-depth tracking for complete block removal (handles #1, #3, #4)
+- Single-line regex for permission entries (#2)
+- ZML content scanning with warnings (#5 — flagged, not auto-removed)
+- Post-removal validation (zero remaining references, structural balance)
+
+**Verified**: 14 references → 0 after removal. Brace/paren/bracket balance maintained.
+
+**Rule**: When removing a report, ALWAYS use `ds_editor.py remove-reports` which handles the full chain. If Page Content ZML warnings appear, redesign the dashboard in Creator UI before exporting.

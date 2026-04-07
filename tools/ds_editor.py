@@ -162,55 +162,102 @@ def add_descriptions(ds_path: Path, descriptions: dict[str, dict[str, str]]) -> 
 # ============================================================
 
 def remove_reports(ds_path: Path, report_names: list[str]) -> int:
-    """Remove named reports and all references from a .ds file.
+    """Remove named reports and ALL references from a .ds file.
 
-    Returns the number of reports removed.
+    Handles the full 5-point dependency chain:
+      1. Report definition (kanban/list block in reports section)
+      2. Permission entries (ReportPermissions in share_settings)
+      3. Quickview/detailview config (web > reports > report block)
+      4. Navigation menu entry (web > menu > space > section > report block)
+      5. Page Content ZML references (warn only, don't auto-remove)
+
+    Returns the number of report blocks removed.
     """
     with open(ds_path, encoding="utf-8") as f:
-        content = f.read()
+        lines = f.readlines()
 
     removed = 0
+    warnings: list[str] = []
+
     for name in report_names:
-        # Remove report definition blocks (kanban or list)
-        for report_type in ["kanban", "list"]:
-            pattern = rf"\t+{report_type}\s+{re.escape(name)}\s*\{{[^}}]*\}}"
-            if re.search(pattern, content, re.DOTALL):
-                # More robust: line-by-line removal
-                pass
+        escaped = re.escape(name)
 
-        # Remove permission references
-        content = re.sub(rf"\n\t+{re.escape(name)}=\{{[^}}]*\}}", "", content)
-
-        # Remove menu entries
-        content = re.sub(
-            rf"\n\t+report {re.escape(name)}\s*\{{[^}}]*\}}",
-            "",
-            content,
-        )
-
-        # Line-by-line block removal for report definitions
-        lines = content.split("\n")
+        # --- Pass 1: Remove brace-delimited blocks ---
+        # Matches: kanban/list definitions, report config blocks, nav entries
+        # Pattern: any line containing the report name followed by a { } block
         new_lines: list[str] = []
         skipping = False
         skip_depth = 0
+        i = 0
 
-        for line in lines:
-            if not skipping and re.match(
-                rf"^\t+(?:kanban|list)\s+{re.escape(name)}\s*$", line.rstrip()
-            ):
-                skipping = True
-                skip_depth = 0
-                removed += 1
-                continue
-            if skipping:
-                skip_depth += line.count("{") - line.count("}")
-                if skip_depth <= 0 and "}" in line:
-                    skipping = False
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.rstrip()
+
+            if not skipping:
+                # Match report definition: kanban/list report_name
+                # Match quickview/detailview config: report report_name
+                # Match navigation entry: report report_name
+                is_block_start = bool(re.match(
+                    rf"^\s+(?:kanban|list|report)\s+{escaped}\s*$", stripped,
+                ))
+
+                if is_block_start:
+                    # Start skipping this block
+                    skipping = True
+                    skip_depth = 0
+                    removed += 1
+                    i += 1
                     continue
-                continue
-            new_lines.append(line)
 
-        content = "\n".join(new_lines)
+                # Match single-line permission entry: report_name={"View",...}
+                if re.match(rf"^\s+{escaped}=\{{.*\}}\s*$", stripped):
+                    i += 1
+                    continue
+
+                new_lines.append(line)
+            else:
+                # Track brace depth to find block end
+                skip_depth += line.count("{") - line.count("}")
+                if skip_depth <= 0:
+                    skipping = False
+                # Don't append — we're inside a skipped block
+
+            i += 1
+
+        lines = new_lines
+
+        # --- Pass 2: Check ZML content for references (warn only) ---
+        for j, line in enumerate(lines):
+            if f"linkName = '{name}'" in line or f"linkName='{name}'" in line:
+                warnings.append(
+                    f"WARNING: Page Content ZML references '{name}' at line {j + 1}. "
+                    f"This page needs manual redesign in Creator UI."
+                )
+
+    # --- Pass 3: Post-removal validation ---
+    content = "".join(lines)
+
+    # Check for orphaned references
+    for name in report_names:
+        remaining = content.count(name)
+        if remaining > 0:
+            warnings.append(
+                f"WARNING: {remaining} reference(s) to '{name}' still remain after removal. "
+                f"Manual cleanup may be needed."
+            )
+
+    # Check structural balance
+    braces = content.count("{") - content.count("}")
+    parens = content.count("(") - content.count(")")
+    if braces != 0:
+        warnings.append(f"WARNING: Brace imbalance after removal: {braces}")
+    if parens != 0:
+        warnings.append(f"WARNING: Paren imbalance after removal: {parens}")
+
+    # Print warnings
+    for w in warnings:
+        print(f"  {w}")
 
     with open(ds_path, "w", encoding="utf-8") as f:
         f.write(content)
