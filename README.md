@@ -122,64 +122,32 @@ Deployment:  .ds file import (validated: structural + permission + script change
 
 ### Component Map
 
-```
-+-------------------------------+
-|       Zoho Creator App        |
-|-------------------------------|
-|  FORMS (6)                    |
-|  - Departments (lookup)       |
-|  - Clients (lookup)           |
-|  - GL_Accounts (lookup)       |
-|  - Approval_Thresholds (cfg)  |
-|  - Expense_Claims (txn)       |
-|  - Approval_History (audit)   |
-|-------------------------------|
-|  WORKFLOWS (6)                |
-|  - On Validate (8 checks)     |
-|  - On Success (routing)       |
-|  - On Edit (resubmission)     |
-|  - On Load (auto-populate)    |
-|  - Shadow field fill          |
-|  - Claim ref generation       |
-|-------------------------------|
-|  APPROVAL PROCESSES (1x2lvl)  |
-|  - Level 1: Line Manager      |
-|  - Level 2: Head of Dept      |
-|-------------------------------|
-|  SCHEDULED TASKS (1)          |
-|  - SLA Enforcement (daily)    |
-|-------------------------------|
-|  REPORTS (12) + PAGES (3)     |
-|  - Employee Dashboard         |
-|  - Management Dashboard       |
-+-------------------------------+
-         |
-    [.ds export]
-         |
-+-------------------------------+
-|     Local Dev Environment     |
-|-------------------------------|
-|  LINTERS (3)                  |
-|  - lint_deluge.py  (20 rules) |
-|  - lint_access.py  (8 rules)  |
-|  - lint_hybrid.py  (13 rules) |
-|-------------------------------|
-|  LANGUAGE DATABASES (2)       |
-|  - deluge_lang.db  (368 rows) |
-|  - access_vba_lang.db (505)   |
-|-------------------------------|
-|  IMPORT PIPELINE (4)          |
-|  - export_access_csv.py       |
-|  - validate_access_data.py    |
-|  - upload_to_creator.py       |
-|  - generate_mock_data.py      |
-|-------------------------------|
-|  DEV TOOLS (4)                |
-|  - parse_ds_export.py         |
-|  - scaffold_deluge.py         |
-|  - ds_editor.py               |
-|  - build_access_db.py         |
-+-------------------------------+
+```mermaid
+block-beta
+    columns 1
+
+    block:creator["Zoho Creator App"]
+        columns 2
+        forms["Forms (6)\nDepartments\nClients\nGL_Accounts\nApproval_Thresholds\nExpense_Claims\nApproval_History"]
+        workflows["Workflows (6)\nOn Validate · 8 checks\nOn Success · routing\nOn Edit · resubmission\nOn Load · auto-populate\nShadow fill · Claim ref"]
+        approval["Approval Process\nLevel 1: Line Manager\nLevel 2: Head of Dept"]
+        scheduled["Scheduled Tasks\nSLA Enforcement (daily)\n12 Reports · 3 Pages"]
+    end
+
+    space
+
+    block:local["Local Dev Environment"]
+        columns 2
+        linters["Linters (3)\nlint_deluge · 20 rules\nlint_access · 8 rules\nlint_hybrid · 13 rules"]
+        databases["Language DBs (2)\ndeluge_lang · 368 rows\naccess_vba_lang · 505 rows"]
+        pipeline["Import Pipeline (4)\nexport_access_csv\nvalidate_access_data\nupload_to_creator\ngenerate_mock_data"]
+        devtools["Dev Tools (4)\nparse_ds_export\nscaffold_deluge\nds_editor\nbuild_access_db"]
+    end
+
+    creator -- ".ds export / API v2.1" --> local
+
+    style creator fill:#1a1a2e,color:#e0e0e0,stroke:#4a90d9
+    style local fill:#1a2e1a,color:#e0e0e0,stroke:#50c878
 ```
 
 ## Repository Structure
@@ -460,16 +428,57 @@ See [docs/imports/access-to-zoho-import-guide.md](docs/imports/access-to-zoho-im
 
 6 forms with 47 fields across config, transaction, and audit layers:
 
-```
-Departments ----+
-                |  1:N
-Clients --------+-------> Expense_Claims -------> Approval_History
-                |         (23 fields)             (6 fields)
-GL_Accounts ----+
-  (+ Risk_Level)          + VAT_Invoice_Type
-                          + POPIA_Consent
-Approval_Thresholds       + Retention_Expiry_Date
-  (+ Tier_Order)
+```mermaid
+erDiagram
+    Departments ||--o{ Expense_Claims : "1:N"
+    Clients ||--o{ Expense_Claims : "1:N"
+    GL_Accounts ||--o{ Expense_Claims : "1:N"
+    Expense_Claims ||--o{ Approval_History : "1:N"
+
+    Departments {
+        int ID PK
+        text Department_Name
+        bit Active
+    }
+    Clients {
+        int ID PK
+        text Client_Name
+        bit Active
+    }
+    GL_Accounts {
+        int ID PK
+        text GL_Code
+        text Expense_Category
+        text Risk_Level
+        bit Receipt_Required
+    }
+    Approval_Thresholds {
+        int ID PK
+        text Tier_Name
+        currency Max_Amount_ZAR
+        text Approver_Role
+        int Tier_Order
+    }
+    Expense_Claims {
+        int ID PK
+        text Employee_Name
+        text Claim_Reference
+        currency Amount_ZAR
+        text Category
+        text Status
+        text VAT_Invoice_Type
+        bit POPIA_Consent
+        date Retention_Expiry_Date
+        int Version
+    }
+    Approval_History {
+        int ID PK
+        int Claim_ID FK
+        text Action_Type
+        text Actor
+        datetime Timestamp
+        text Comments
+    }
 ```
 
 Status values: `Draft` | `Submitted` | `Pending LM Approval` | `Pending HoD Approval` | `Approved` | `Rejected` | `Resubmitted`
@@ -478,24 +487,36 @@ Full specs: [docs/architecture/data-model.md](docs/architecture/data-model.md)
 
 ## Approval Flow
 
-```
-Employee submits
-       |
-  [8 validation checks]
-       |
-  [Self-approval bypass?]---YES---> Pending HoD Approval
-       |
-       NO ---> Pending LM Approval
-                    |
-          [LM Approves]          [LM Rejects] ---> Rejected
-               |                                       |
-     [<= R999.99] -> Approved              [Employee resubmits]
-     [> R999.99]  -> Pending HoD                       |
-                         |                        Resubmitted
-               [HoD Approves] -> Approved              |
-               [HoD Rejects]  -> Rejected        (version ++)
-                                                       |
-     [SLA: 3 days no LM action] -> Auto-escalate to HoD
+```mermaid
+flowchart TD
+    A([Employee Submits]) --> B{8 Validation Checks}
+    B -->|Pass| C{Self-Approval Bypass?}
+    B -->|Fail| X[Blocked with error message]
+    C -->|"Yes (LM role)"| D[Pending HoD Approval]
+    C -->|No| E[Pending LM Approval]
+
+    E --> F{LM Decision}
+    F -->|Approve| G{"Amount <= R999.99?"}
+    F -->|Reject| H[Rejected]
+
+    G -->|Yes| I([Approved - Final])
+    G -->|No| D
+
+    D --> J{HoD Decision}
+    J -->|Approve| I
+    J -->|Reject| H
+
+    H -->|Employee edits| K[Resubmitted - version++]
+    K --> C
+
+    L[SLA: 3 days no LM action] -.->|Auto-escalate| D
+
+    style I fill:#2d6a2d,color:#fff
+    style H fill:#8b2020,color:#fff
+    style X fill:#8b2020,color:#fff
+    style D fill:#b8860b,color:#fff
+    style E fill:#b8860b,color:#fff
+    style L fill:#4a4a6a,color:#fff,stroke-dasharray: 5 5
 ```
 
 Every transition logged in Approval_History with actor, timestamp, and comments.
