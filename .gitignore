@@ -19,8 +19,11 @@ __pycache__/
 .env
 venv/
 
-# Zoho Creator exports (tracked manually, not auto-committed)
-# Uncomment to exclude: exports/*.ds
+# Zoho Creator imports (experiment artifacts, not canonical)
+docs/imports/*.ds
+
+# Generated databases (rebuild with: python tools/build_deluge_db.py)
+exports/*.accdb
 
 # Generated databases (rebuild with: python tools/build_deluge_db.py)
 tools/deluge_lang.db
