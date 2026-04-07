@@ -7,24 +7,28 @@ A governance-first expense reimbursement system built on **Zoho Creator** with a
 Zoho Creator has no deployment API. The conventional approach is manual: click through the UI, paste scripts, hope nothing breaks. There might be a better way:
 
 1. **Edit `.dg` scripts and `.ds` exports in Git** -- version-controlled, reviewable, diffable
-2. **Lint before deploy** -- 20 static analysis rules catch errors before they reach Creator
+2. **Lint before deploy** -- 41 static analysis rules across 3 linters catch errors before they reach Creator
 3. **Import the `.ds` file** -- Creator accepts structural, permission, AND script changes
 4. **Re-export and diff** -- verify what Creator actually applied
 5. **Log discoveries** -- runtime errors feed back into the linter so they never happen twice
+6. **Cross-environment validation** -- hybrid linter validates Access-to-Zoho field mappings, type conversions, and Deluge script coverage
 
 This repo is the version archive, documentation hub, deployment source, AND development environment.
 
 ## Table of Contents
 
 - [Project Status](#project-status)
+- [Development Horizon](#development-horizon)
 - [Governance Framework](#governance-framework)
 - [Architecture](#architecture)
 - [Repository Structure](#repository-structure)
 - [Development Workflow](#development-workflow)
 - [Tooling](#tooling)
+- [Access-to-Zoho Import Pipeline](#access-to-zoho-import-pipeline)
 - [Deluge Scripts](#deluge-scripts)
 - [Data Model](#data-model)
 - [Approval Flow](#approval-flow)
+- [Mock Data & Stress Testing](#mock-data--stress-testing)
 - [Governance Gap Remediation](#governance-gap-remediation)
 - [Discovery Log](#discovery-log)
 - [Getting Started](#getting-started)
@@ -34,7 +38,7 @@ This repo is the version archive, documentation hub, deployment source, AND deve
 
 ## Project Status
 
-**Current version: v0.5.0** (UI Cleanup + .ds Editor Tooling)
+**Current version: v0.6.0** (Access Import Pipeline + Hybrid Linting + Mock Data)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
@@ -43,9 +47,43 @@ This repo is the version archive, documentation hub, deployment source, AND deve
 | 4 | Reports + conditional formatting | Complete |
 | 5 | Dashboards (Employee + Management) | Complete |
 | 6 | Governance gap remediation (15/16 gaps) | Complete |
-| 7 | Testing + demo prep | In Progress |
+| 7 | Access-to-Zoho import tooling + hybrid linter | Complete |
+| 8 | Mock data generation (6 personas, 150 claims) | Complete |
+| 9 | API integration + stress testing | Next |
+| 10 | Two-Key threshold authorization | Planned |
 
 15 of 16 governance gaps resolved. 1 remaining (G-05: hardcoded email addresses -- requires config table design decision).
+
+## Development Horizon
+
+### Near-Term: Zoho Creator REST API Integration (Phase 9)
+
+The import pipeline is built and tested in mock mode. The next step is live API integration:
+
+- **OAuth 2.0 authentication** via Zoho API Console (self-client, refresh token flow)
+- **Record-by-record import** through the Creator form API -- each record hits the same `on_validate` rules as a human submission
+- **Import audit trail** (`exports/csv/import_audit.csv`) logs what each employee would see: successful imports AND validation rejections with the exact error messages
+- **150 synthetic claims** ready to stress-test every approval pathway (happy path, threshold escalation, self-approval bypass, rejection/resubmission, SLA breach)
+
+The tooling (`tools/upload_to_creator.py`) runs in mock mode by default. Add `--live` when API credentials are configured in `config/zoho-api.yaml`.
+
+### Mid-Term: Two-Key Threshold Authorization (Phase 10)
+
+The current system uses a two-tier sequential approval model (LM up to R999.99, then HoD). The Two-Key enhancement adds **concurrent dual-approval** for high-value claims:
+
+- Claims exceeding a configurable threshold require **two independent approvers** to sign off
+- No single individual can unilaterally authorize high-value expenditure
+- Strengthens King IV Principle 7 (Delegation of Authority) and COSO segregation controls
+- Builds on the existing `Approval_Thresholds` table by adding a `Requires_Dual_Approval` flag and a third approval tier
+- See [enhancements/two-key-threshold-auth.md](enhancements/two-key-threshold-auth.md) for specification
+
+### Long-Term: OmegaScript + Zoho Ecosystem Integration
+
+- **Zoho Books**: Automated journal entry creation on claim approval
+- **Zoho Analytics**: Advanced reporting dashboards and trend analysis
+- **Zoho Expense**: Receipt OCR and mileage tracking integration
+- **OmegaScript**: Full AST-based Deluge parser and semantic validator (Tree-sitter grammar)
+- See [enhancements/future-roadmap.md](enhancements/future-roadmap.md) and [enhancements/omega-script-vision.md](enhancements/omega-script-vision.md)
 
 ## Governance Framework
 
@@ -121,15 +159,26 @@ Deployment:  .ds file import (validated: structural + permission + script change
 +-------------------------------+
 |     Local Dev Environment     |
 |-------------------------------|
-|  tools/lint_deluge.py         |
-|    20 rules, SQLite-backed    |
-|    --fix auto-repair mode     |
-|  tools/parse_ds_export.py     |
-|    Extract fields + scripts   |
-|  tools/scaffold_deluge.py     |
-|    Generate .dg boilerplate   |
-|  tools/build_deluge_db.py     |
-|    232 functions, 47 fields   |
+|  LINTERS (3)                  |
+|  - lint_deluge.py  (20 rules) |
+|  - lint_access.py  (8 rules)  |
+|  - lint_hybrid.py  (13 rules) |
+|-------------------------------|
+|  LANGUAGE DATABASES (2)       |
+|  - deluge_lang.db  (368 rows) |
+|  - access_vba_lang.db (505)   |
+|-------------------------------|
+|  IMPORT PIPELINE (4)          |
+|  - export_access_csv.py       |
+|  - validate_access_data.py    |
+|  - upload_to_creator.py       |
+|  - generate_mock_data.py      |
+|-------------------------------|
+|  DEV TOOLS (4)                |
+|  - parse_ds_export.py         |
+|  - scaffold_deluge.py         |
+|  - ds_editor.py               |
+|  - build_access_db.py         |
 +-------------------------------+
 ```
 
@@ -139,8 +188,8 @@ Deployment:  .ds file import (validated: structural + permission + script change
 expense_reimbursement_manager/
 |-- README.md
 |-- LICENSE                            # MIT
-|-- CHANGELOG.md                       # v0.0 -> v0.5.0
-|-- CLAUDE.md                          # OmniScript rules + Deluge quick-ref + tooling workflow
+|-- CHANGELOG.md                       # v0.0 -> v0.6.0
+|-- CLAUDE.md                          # OmniScript rules + Deluge/Access quick-ref + tooling workflow
 |
 |-- src/deluge/                        # 11 production Deluge scripts (457 LOC)
 |   |-- form-workflows/               # On Validate (8 checks), On Success, On Edit, On Load
@@ -148,16 +197,34 @@ expense_reimbursement_manager/
 |   +-- scheduled/                    # SLA enforcement daily job
 |
 |-- exports/                           # .ds snapshots (deployment source + disaster recovery)
+|   +-- csv/                           # Generated CSV exports for Zoho import (gitignored)
 |
-|-- tools/                             # 4 Python tools (2,406 LOC)
-|   |-- lint_deluge.py                 # 20-rule linter with --fix mode
-|   |-- build_deluge_db.py            # SQLite DB: 11 tables, 368 rows
-|   |-- parse_ds_export.py            # .ds parser: forms, fields, embedded scripts
-|   +-- scaffold_deluge.py            # .dg boilerplate generator from manifest
+|-- tools/                             # 13 Python tools (6,945 LOC)
+|   |-- lint_deluge.py                 # 20-rule Deluge linter with --fix mode
+|   |-- lint_access.py                 # 8-rule Access SQL linter
+|   |-- lint_hybrid.py                 # 13-rule cross-environment linter (Access <-> Zoho)
+|   |-- build_deluge_db.py             # SQLite DB: 11 tables, 368 rows (Deluge language)
+|   |-- build_access_vba_db.py         # SQLite DB: 12 tables, 505 rows (Access/VBA language)
+|   |-- export_access_csv.py           # Access .accdb -> CSV export (Windows)
+|   |-- validate_access_data.py        # Pre-flight CSV validator for Zoho constraints
+|   |-- upload_to_creator.py           # REST API v2.1 uploader (mock mode default)
+|   |-- generate_mock_data.py          # 6-persona synthetic data generator (150 claims)
+|   |-- parse_ds_export.py             # .ds parser: forms, fields, embedded scripts
+|   |-- scaffold_deluge.py             # .dg boilerplate generator from manifest
+|   |-- ds_editor.py                   # Programmatic .ds modifications
+|   +-- build_access_db.py             # Access .accdb builder with seed data
 |
 |-- config/
-|   |-- seed-data/                     # JSON source of truth (19 records across 4 tables)
-|   |-- deluge-reference.md            # 200+ functions, operators, system vars, error messages
+|   |-- seed-data/                     # JSON source of truth (19 records + 3 mapping files)
+|   |   |-- departments.json           # 5 departments
+|   |   |-- clients.json               # 5 clients
+|   |   |-- gl_accounts.json           # 7 GL codes with SARS provisions
+|   |   |-- approval_thresholds.json   # 2 tiers with Tier_Order
+|   |   |-- type_mappings.json         # 14 Access -> Zoho type pairs
+|   |   |-- field_name_mappings.json   # 40 Access -> Zoho field maps
+|   |   +-- access_table_fields.json   # 44 Access table schemas
+|   |-- zoho-api.yaml.template         # Template for Zoho API credentials
+|   |-- deluge-reference.md            # 200+ functions, operators, system vars
 |   |-- deluge-manifest.yaml           # Script metadata for scaffolder
 |   |-- email-templates.yaml           # Centralised notification templates
 |   +-- roles-and-permissions.md       # Role matrix + field-level access
@@ -166,13 +233,14 @@ expense_reimbursement_manager/
 |   |-- architecture/                  # Data model, state machine, approval routing, system overview
 |   |-- compliance/                    # King IV mapping, SARS requirements, delegation of authority
 |   |-- build-guide/                   # 19-step build sequence, field link names, remediation plan
+|   |-- imports/                       # Access-to-Zoho import guide, type mapping ref, API guide
 |   |-- testing/                       # 5 test scenarios, 3-act demo script
 |   |-- governance-remediation-plan.md # 16 gaps: 15 resolved, 1 open
 |   |-- discovery-log.md              # Runtime discoveries -> linter feedback loop
 |   +-- ds-edit-experiment-log.md     # 3 rounds proving .ds deployment viability
 |
 |-- enhancements/                      # Future: OmegaScript vision, Two-Key auth, roadmap
-+-- tests/                             # Linter test fixtures
++-- tests/                             # Linter test fixtures (.dg, .sql)
 ```
 
 ## Development Workflow
@@ -276,6 +344,46 @@ python tools/ds_editor.py restrict-menus exports/*.ds --reports name1,name2
 
 Report removal handles the full dependency chain: definition, permissions, quickview/detailview, navigation menu, and ZML content warnings.
 
+### Access SQL Linter (`tools/lint_access.py`)
+
+8 static analysis rules for Access SQL DDL/DML files, backed by the Access/VBA language database.
+
+```bash
+python tools/lint_access.py src/access/        # lint all .sql files
+python tools/lint_access.py path/to/file.sql   # lint one file
+```
+
+| Severity | Rules | Examples |
+|----------|-------|---------|
+| ERROR (5) | AV001, AV002, AV004, AV006, AV008 | Reserved words unescaped, deprecated types, missing semicolons, AUTOINCREMENT on non-LONG |
+| WARN (3) | AV003, AV005, AV007 | Names with spaces, SELECT *, non-PascalCase tables |
+
+### Hybrid Linter (`tools/lint_hybrid.py`)
+
+13 cross-environment rules that validate Access-to-Zoho Creator integration: type mappings, field name alignment, FK relationships, and Deluge script coverage.
+
+```bash
+python tools/lint_hybrid.py                                          # schema only
+python tools/lint_hybrid.py --data exports/csv/                      # + data validation
+python tools/lint_hybrid.py --data exports/csv/ --scripts src/deluge/ # + script cross-ref
+```
+
+| Severity | Rules | Examples |
+|----------|-------|---------|
+| ERROR (3) | HY001, HY004, HY006, HY008 | No Zoho equivalent, unmapped fields, missing FK lookups, missing mandatory source |
+| WARN (8) | HY002, HY003, HY005, HY007, HY011, HY013-HY016 | Currency precision, MEMO length, name mismatches, boolean transform, picklist validation |
+| INFO (2) | HY009, HY010, HY015 | Orphan tables, Zoho-only forms, unreferenced Access fields |
+
+### Access/VBA Language Database (`tools/build_access_vba_db.py`)
+
+SQLite database with 12 tables and 505 rows of Access SQL and VBA language data. Source of truth for lint_access.py and lint_hybrid.py.
+
+```bash
+python tools/build_access_vba_db.py --force   # rebuild from scratch
+```
+
+Mapping tables (type_mappings, field_name_mappings, access_table_fields) are loaded from human-readable JSON files in `config/seed-data/`.
+
 ### Access Database Builder (`tools/build_access_db.py`)
 
 Creates a `.accdb` file with all 6 tables, relationships, and seed data for alternative Creator import path.
@@ -283,6 +391,40 @@ Creates a `.accdb` file with all 6 tables, relationships, and seed data for alte
 ```bash
 python tools/build_access_db.py   # creates exports/ERM.accdb
 ```
+
+## Access-to-Zoho Import Pipeline
+
+Four confirmed pathways for importing Access data into an existing Zoho Creator application:
+
+| Pathway | Formats | Into Existing App | Automation |
+|---------|---------|-------------------|------------|
+| UI Import (Report > Import Data) | .csv, .xlsx, .accdb, .json | Yes (Add/Update) | Manual |
+| MS Access Migration Tool | .mdb, .accdb | Yes | Semi-auto |
+| REST API v2.1 | JSON | Yes (POST per form) | Fully scriptable |
+| .ds file import | .ds | Yes (structural) | Manual |
+
+### Import Workflow
+
+```bash
+# 1. Export Access tables to CSV (Windows only)
+python tools/export_access_csv.py exports/ERM.accdb --output-dir exports/csv/
+
+# 2. Validate data against Zoho constraints
+python tools/validate_access_data.py exports/csv/ --check-picklists --check-refs
+
+# 3. Cross-environment validation
+python tools/lint_hybrid.py --data exports/csv/ --scripts src/deluge/
+
+# 4. Upload to Zoho Creator (mock mode by default)
+python tools/upload_to_creator.py --config config/zoho-api.yaml --csv-dir exports/csv/
+
+# 5. Live upload (when API credentials are configured)
+python tools/upload_to_creator.py --config config/zoho-api.yaml --csv-dir exports/csv/ --live
+```
+
+The uploader processes records one-by-one through the Creator form API, simulating real employee submissions. Each record hits `on_validate` rules. Failed records are logged to `exports/csv/import_audit.csv` with the exact error message the employee would see.
+
+See [docs/imports/access-to-zoho-import-guide.md](docs/imports/access-to-zoho-import-guide.md) for detailed pathway documentation.
 
 ## Deluge Scripts
 
@@ -358,6 +500,26 @@ Employee submits
 
 Every transition logged in Approval_History with actor, timestamp, and comments.
 
+## Mock Data & Stress Testing
+
+`tools/generate_mock_data.py` generates 150 synthetic expense claims with 371 approval history records using 6 South African employee personas:
+
+| Persona | Dept | Behavior | Tests |
+|---------|------|----------|-------|
+| **Thandi Molefe** | Sales | Normal | Clean claims, under threshold, happy path |
+| **Sipho Dlamini** | Operations | Normal | Mix of small/large claims, HoD escalation |
+| **Zanele Khumalo** | Customer Service | Rookie errors | Future dates, missing POPIA, zero amount, >90 days, wrong VAT |
+| **Pieter van der Merwe** | Finance | Line Manager | Self-approval bypass routing to HoD |
+| **Nomsa Sithole** | Sales | Suspicious (crook) | Round amounts, R4,999 threshold-dodging, same-day triplicate claims |
+| **Bongani Nkosi** | IT | Resubmitter | Rejection -> resubmission flow, version increments |
+
+```bash
+python tools/generate_mock_data.py --output-dir exports/csv/         # generate
+python tools/validate_access_data.py exports/csv/ --check-picklists  # validate
+```
+
+Data includes realistic SA vendors (Uber, FlySafair, Nando's, Takealot, City Lodge, Vodacom), SLA breach escalation records with SYSTEM actor, and receipt placeholder URLs. Deterministic output via `--seed` flag.
+
 ## Governance Gap Remediation
 
 16 gaps identified from formal Governance Gap Report. [Full plan](docs/governance-remediation-plan.md).
@@ -401,6 +563,7 @@ Runtime discoveries from Creator that feed back into documentation and tooling. 
 - Python 3.8+ (for tooling)
 - Git
 - Zoho Creator account (Free Trial or Standard)
+- pyodbc + Microsoft Access Driver (Windows only, for .accdb operations)
 
 ### Setup
 
@@ -408,33 +571,43 @@ Runtime discoveries from Creator that feed back into documentation and tooling. 
 git clone https://github.com/holgergevers-hub/expense_reimbursement_manager.git
 cd expense_reimbursement_manager
 
-# Build the linter database
+# Build both language databases
 python tools/build_deluge_db.py
+python tools/build_access_vba_db.py
 
-# Verify linter works
+# Verify linters work
 python tools/lint_deluge.py src/deluge/
+python tools/lint_access.py tests/lint_test_access_bad.sql
+python tools/lint_hybrid.py --verbose
 
-# Parse the .ds export
-python tools/parse_ds_export.py exports/Expense_Reimbursement_Management-stage.ds
+# Generate mock data and validate
+python tools/generate_mock_data.py --output-dir exports/csv/
+python tools/validate_access_data.py exports/csv/ --check-picklists --check-refs
 ```
 
 ### Deploying to Creator
 
 ```bash
 # 1. Make your changes to .dg scripts and/or .ds export
-# 2. Lint
+# 2. Lint all environments
 python tools/lint_deluge.py src/deluge/
+python tools/lint_hybrid.py --data exports/csv/ --scripts src/deluge/
 # 3. Import exports/Expense_Reimbursement_Management-stage.ds into Creator
-# 4. Re-export from Creator and commit the updated .ds
+# 4. Upload data via API (mock mode first, then --live)
+python tools/upload_to_creator.py --config config/zoho-api.yaml --csv-dir exports/csv/
+# 5. Re-export from Creator and commit the updated .ds
 ```
 
 ### Seed Data
 
-Import JSON files from `config/seed-data/` into Creator forms:
+JSON files in `config/seed-data/` serve as the source of truth:
 - `departments.json` -- 5 departments
 - `clients.json` -- 5 clients
 - `gl_accounts.json` -- 7 GL codes with SARS provisions and Risk_Level
 - `approval_thresholds.json` -- 2 tiers with Tier_Order
+- `type_mappings.json` -- 14 Access-to-Zoho type conversion pairs
+- `field_name_mappings.json` -- 40 Access-to-Zoho field maps
+- `access_table_fields.json` -- 44 Access table schema entries
 
 ## Key Documents
 
@@ -446,25 +619,29 @@ Import JSON files from `config/seed-data/` into Creator forms:
 | [Data Model](docs/architecture/data-model.md) | 6 forms, 47 fields, ERD |
 | [State Machine](docs/architecture/state-machine.md) | Claim lifecycle transitions |
 | [Approval Routing](docs/architecture/approval-routing.md) | Threshold logic, SLA, self-approval bypass |
+| [Access-to-Zoho Import Guide](docs/imports/access-to-zoho-import-guide.md) | 4 import pathways compared, step-by-step |
+| [Type Mapping Reference](docs/imports/type-mapping-reference.md) | Access-to-Zoho data type crosswalk |
+| [API Upload Guide](docs/imports/api-upload-guide.md) | OAuth setup, rate limits, batch patterns |
 | [Deluge Reference](config/deluge-reference.md) | 200+ functions, operators, system vars |
-| [Field Link Names](docs/build-guide/field-link-names.md) | Auto-generated from .ds parser |
-| [King IV Mapping](docs/compliance/king-iv-mapping.md) | Principles mapped to controls |
-| [SARS Requirements](docs/compliance/sars-requirements.md) | S11(a), VAT, retention |
-| [Changelog](CHANGELOG.md) | v0.0 -> v0.5.0 |
+| [Two-Key Auth Spec](enhancements/two-key-threshold-auth.md) | Concurrent dual-approval for high-value claims |
+| [Future Roadmap](enhancements/future-roadmap.md) | Zoho ecosystem integrations, OmegaScript vision |
+| [Changelog](CHANGELOG.md) | v0.0 -> v0.6.0 |
 
 ## Metrics
 
 | Metric | Value |
 |--------|-------|
-| Commits | 33 |
-| Total files | 58 |
+| Commits | 42+ |
+| Total files | 73 |
 | Deluge scripts (production) | 11 (457 LOC) |
-| Python tools | 6 (3,173 LOC) |
-| Linter rules | 20 |
-| SQLite tables | 11 (368 rows) |
+| Python tools | 13 (6,945 LOC) |
+| Linter rules | 41 (20 Deluge + 8 Access + 13 Hybrid) |
+| SQLite tables | 23 (873 rows across 2 databases) |
 | Governance gaps resolved | 15 of 16 |
 | Discovery log entries | 6 (DL-001 through DL-006) |
-| Seed data records | 19 |
+| Seed data records | 19 + 98 mapping entries |
+| Mock data | 150 claims, 371 audit records, 6 personas |
+| Import pathways documented | 4 (UI, Migration Tool, API, .ds) |
 | .ds import change types proven | 9 of 10 tested |
 
 ## Version History
@@ -478,6 +655,7 @@ Import JSON files from `config/seed-data/` into Creator forms:
 | v0.3.0 | OmegaScript Phase 2: .ds parser, scaffolder, auto-fix |
 | v0.4.0 | Governance gap remediation (12 gaps), .ds deployment validated |
 | v0.5.0 | UI cleanup (42 field descriptions, report pruning), ds_editor + Access DB tools, DL-005 resolved |
+| v0.6.0 | Access-to-Zoho import pipeline, hybrid linter, Access/VBA language DB, mock data generator |
 
 ## License
 
