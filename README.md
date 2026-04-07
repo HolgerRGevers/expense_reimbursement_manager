@@ -4,7 +4,7 @@ A governance-first expense reimbursement system built on **Zoho Creator** with a
 
 ## What Makes This Different
 
-Zoho Creator has no deployment API. The conventional approach is manual: click through the UI, paste scripts, hope nothing breaks. We proved a better way:
+Zoho Creator has no deployment API. The conventional approach is manual: click through the UI, paste scripts, hope nothing breaks. There might be a better way:
 
 1. **Edit `.dg` scripts and `.ds` exports in Git** -- version-controlled, reviewable, diffable
 2. **Lint before deploy** -- 20 static analysis rules catch errors before they reach Creator
