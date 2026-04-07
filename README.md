@@ -34,7 +34,7 @@ This repo is the version archive, documentation hub, deployment source, AND deve
 
 ## Project Status
 
-**Current version: v0.4.0** (Governance Gap Remediation)
+**Current version: v0.5.0** (UI Cleanup + .ds Editor Tooling)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
@@ -139,7 +139,7 @@ Deployment:  .ds file import (validated: structural + permission + script change
 expense_reimbursement_manager/
 |-- README.md
 |-- LICENSE                            # MIT
-|-- CHANGELOG.md                       # v0.0 -> v0.4.0
+|-- CHANGELOG.md                       # v0.0 -> v0.5.0
 |-- CLAUDE.md                          # OmniScript rules + Deluge quick-ref + tooling workflow
 |
 |-- src/deluge/                        # 11 production Deluge scripts (457 LOC)
@@ -202,6 +202,9 @@ expense_reimbursement_manager/
 | Field defaults (initial value) | YES | Round 3 |
 | Field attributes (allow new entries) | YES | Round 3 |
 | Permissions (readonly in share_settings) | YES | Round 3 |
+| Field descriptions (help_text) | YES | v0.5.0 |
+| Report removal (with 5-point cleanup) | YES | v0.5.0 (DL-006) |
+| Report menu/action block edits | UNRESOLVED | v0.5.0 (needs research) |
 
 ### The Discovery Feedback Loop
 
@@ -258,6 +261,27 @@ SQLite database with 11 tables and 368 rows of Deluge language data.
 
 ```bash
 python tools/build_deluge_db.py --force   # rebuild from scratch
+```
+
+### .ds Editor (`tools/ds_editor.py`)
+
+Programmatic modifications to .ds export files with 4 subcommands.
+
+```bash
+python tools/ds_editor.py audit exports/*.ds              # check state
+python tools/ds_editor.py add-descriptions exports/*.ds    # from YAML config
+python tools/ds_editor.py remove-reports exports/*.ds --reports name1,name2  # 5-point cleanup
+python tools/ds_editor.py restrict-menus exports/*.ds --reports name1,name2
+```
+
+Report removal handles the full dependency chain: definition, permissions, quickview/detailview, navigation menu, and ZML content warnings.
+
+### Access Database Builder (`tools/build_access_db.py`)
+
+Creates a `.accdb` file with all 6 tables, relationships, and seed data for alternative Creator import path.
+
+```bash
+python tools/build_access_db.py   # creates exports/ERM.accdb
 ```
 
 ## Deluge Scripts
@@ -365,7 +389,10 @@ Runtime discoveries from Creator that feed back into documentation and tooling. 
 |----|-----------|--------|
 | DL-001 | `Added_User` only accepts `zoho.loginuser` or `zoho.adminuser` | New linter rule DG019 |
 | DL-002 | New fields via .ds import: confirmed working | 5 fields created via .ds |
-| DL-003 | .ds import capability matrix: all change types work | Validates deployment pipeline |
+| DL-003 | .ds import capability matrix: all tested change types work | Validates deployment pipeline |
+| DL-004 | Combined .ds edits can cause untraceable import failures | Rule: one change type at a time |
+| DL-005 | Report menu block edits: resolved via 5-point dependency chain | Rewritten ds_editor.py remove-reports |
+| DL-006 | Report removal requires cleanup in 5 locations (definition, permissions, quickview, nav, ZML) | ds_editor handles all 5 automatically |
 
 ## Getting Started
 
@@ -423,22 +450,22 @@ Import JSON files from `config/seed-data/` into Creator forms:
 | [Field Link Names](docs/build-guide/field-link-names.md) | Auto-generated from .ds parser |
 | [King IV Mapping](docs/compliance/king-iv-mapping.md) | Principles mapped to controls |
 | [SARS Requirements](docs/compliance/sars-requirements.md) | S11(a), VAT, retention |
-| [Changelog](CHANGELOG.md) | v0.0 -> v0.4.0 |
+| [Changelog](CHANGELOG.md) | v0.0 -> v0.5.0 |
 
 ## Metrics
 
 | Metric | Value |
 |--------|-------|
-| Commits | 18 |
-| Total files | 55 |
+| Commits | 33 |
+| Total files | 58 |
 | Deluge scripts (production) | 11 (457 LOC) |
-| Python tools | 4 (2,406 LOC) |
+| Python tools | 6 (3,173 LOC) |
 | Linter rules | 20 |
 | SQLite tables | 11 (368 rows) |
 | Governance gaps resolved | 15 of 16 |
-| Documentation files | 23 |
+| Discovery log entries | 6 (DL-001 through DL-006) |
 | Seed data records | 19 |
-| .ds import change types proven | 7 of 7 tested |
+| .ds import change types proven | 9 of 10 tested |
 
 ## Version History
 
@@ -450,6 +477,7 @@ Import JSON files from `config/seed-data/` into Creator forms:
 | v0.2.1 | SQLite-backed linter, Pylance compliance |
 | v0.3.0 | OmegaScript Phase 2: .ds parser, scaffolder, auto-fix |
 | v0.4.0 | Governance gap remediation (12 gaps), .ds deployment validated |
+| v0.5.0 | UI cleanup (42 field descriptions, report pruning), ds_editor + Access DB tools, DL-005 resolved |
 
 ## License
 
