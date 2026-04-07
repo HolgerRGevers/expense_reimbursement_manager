@@ -1,0 +1,13 @@
+# Zoho Creator API Configuration Template
+# Copy this file to config/zoho-api.yaml and fill in your credentials.
+# NEVER commit the actual zoho-api.yaml file (it is in .gitignore).
+#
+# See docs/imports/api-upload-guide.md for setup instructions.
+
+client_id: "YOUR_CLIENT_ID"
+client_secret: "YOUR_CLIENT_SECRET"
+refresh_token: "YOUR_REFRESH_TOKEN"
+owner: "YOUR_ZOHO_USERNAME"
+app: "expense-reimbursement-management"
+api_base: "https://creator.zoho.com/api/v2.1"
+auth_base: "https://accounts.zoho.com"
