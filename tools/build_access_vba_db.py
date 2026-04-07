@@ -13,11 +13,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sqlite3
 import sys
+from pathlib import Path
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "access_vba_lang.db")
+SEED_DIR = Path(__file__).parent.parent / "config" / "seed-data"
 
 
 def create_schema(cur: sqlite3.Cursor) -> None:
@@ -327,130 +330,39 @@ def populate_vba_keywords(cur: sqlite3.Cursor) -> None:
 
 
 def populate_access_table_fields(cur: sqlite3.Cursor) -> None:
-    """Populate ERM table schemas mapped to Zoho forms."""
-    fields = [
-        # Departments
-        ("Departments", "ID", "AUTOINCREMENT", "departments", "department_id", "PK"),
-        ("Departments", "Department_Name", "TEXT(100)", "departments", "name", "NOT NULL"),
-        ("Departments", "Active", "BIT", "departments", "is_active", None),
-        # Clients
-        ("Clients", "ID", "AUTOINCREMENT", "clients", "client_id", "PK"),
-        ("Clients", "Client_Name", "TEXT(100)", "clients", "name", "NOT NULL"),
-        ("Clients", "Active", "BIT", "clients", "is_active", None),
-        # GL_Accounts
-        ("GL_Accounts", "ID", "AUTOINCREMENT", "gl_accounts", None, "PK, no direct Zoho field"),
-        ("GL_Accounts", "GL_Code", "TEXT(20)", "gl_accounts", "gl_code", "NOT NULL"),
-        ("GL_Accounts", "Account_Name", "TEXT(200)", "gl_accounts", "account_name", "NOT NULL"),
-        ("GL_Accounts", "Expense_Category", "TEXT(100)", "gl_accounts", "expense_category", None),
-        ("GL_Accounts", "Receipt_Required", "BIT", "gl_accounts", "receipt_required", None),
-        ("GL_Accounts", "SARS_Provision", "TEXT(100)", "gl_accounts", "SARS_Provision", None),
-        ("GL_Accounts", "Risk_Level", "TEXT(20)", "gl_accounts", "Risk_Level", None),
-        ("GL_Accounts", "Active", "BIT", "gl_accounts", "Active", None),
-        # Approval_Thresholds
-        ("Approval_Thresholds", "ID", "AUTOINCREMENT", "approval_thresholds", None, "PK"),
-        ("Approval_Thresholds", "Tier_Name", "TEXT(100)", "approval_thresholds", "tier_name", "NOT NULL"),
-        ("Approval_Thresholds", "Max_Amount_ZAR", "CURRENCY", "approval_thresholds", "max_amount_zar", None),
-        ("Approval_Thresholds", "Approver_Role", "TEXT(100)", "approval_thresholds", "approver_role", None),
-        ("Approval_Thresholds", "Tier_Order", "INTEGER", "approval_thresholds", "Tier_Order", None),
-        ("Approval_Thresholds", "Active", "BIT", "approval_thresholds", "Active", None),
-        # Expense_Claims
-        ("Expense_Claims", "ID", "AUTOINCREMENT", "expense_claims", "ID", "PK"),
-        ("Expense_Claims", "Employee_Name", "TEXT(200)", "expense_claims", "Employee_Name1", "Composite name field in Zoho"),
-        ("Expense_Claims", "Email", "TEXT(200)", "expense_claims", "Email", None),
-        ("Expense_Claims", "Submission_Date", "DATETIME", "expense_claims", "Submission_Date", None),
-        ("Expense_Claims", "Claim_Reference", "TEXT(20)", "expense_claims", "Claim_Reference", None),
-        ("Expense_Claims", "Department_ID", "LONG", "expense_claims", "department", "FK -> Departments.ID"),
-        ("Expense_Claims", "Client_ID", "LONG", "expense_claims", "client", "FK -> Clients.ID"),
-        ("Expense_Claims", "Expense_Date", "DATETIME", "expense_claims", "Expense_Date", None),
-        ("Expense_Claims", "Category", "TEXT(100)", "expense_claims", "category", None),
-        ("Expense_Claims", "Amount_ZAR", "CURRENCY", "expense_claims", "amount_zar", None),
-        ("Expense_Claims", "Description", "MEMO", "expense_claims", "description", None),
-        ("Expense_Claims", "VAT_Invoice_Type", "TEXT(100)", "expense_claims", "VAT_Invoice_Type", None),
-        ("Expense_Claims", "POPIA_Consent", "BIT", "expense_claims", "POPIA_Consent", "Mandatory in Zoho"),
-        ("Expense_Claims", "Status", "TEXT(50)", "expense_claims", "status", None),
-        ("Expense_Claims", "Rejection_Reason", "MEMO", "expense_claims", "Rejection_Reason", None),
-        ("Expense_Claims", "Version", "INTEGER", "expense_claims", "Version", "Default: 1"),
-        ("Expense_Claims", "Retention_Expiry_Date", "DATETIME", "expense_claims", "Retention_Expiry_Date", None),
-        ("Expense_Claims", "GL_Code_ID", "LONG", "expense_claims", "gl_code", "FK -> GL_Accounts.ID"),
-        # Approval_History
-        ("Approval_History", "ID", "AUTOINCREMENT", "approval_history", None, "PK"),
-        ("Approval_History", "Claim_ID", "LONG", "approval_history", "claim", "FK -> Expense_Claims.ID"),
-        ("Approval_History", "Action_Type", "TEXT(100)", "approval_history", "action_1", "IMPORTANT: Zoho uses action_1"),
-        ("Approval_History", "Actor", "TEXT(200)", "approval_history", "actor", None),
-        ("Approval_History", "Action_Timestamp", "DATETIME", "approval_history", "timestamp", None),
-        ("Approval_History", "Comments", "MEMO", "approval_history", "comments", None),
+    """Populate ERM table schemas from config/seed-data/access_table_fields.json."""
+    json_path = SEED_DIR / "access_table_fields.json"
+    with open(json_path, encoding="utf-8") as f:
+        fields_data = json.load(f)
+    rows = [
+        (r["table_name"], r["field_name"], r["access_type"],
+         r.get("zoho_form"), r.get("zoho_field"), r.get("notes"))
+        for r in fields_data
     ]
-    cur.executemany("INSERT OR REPLACE INTO access_table_fields VALUES (?, ?, ?, ?, ?, ?)", fields)
+    cur.executemany("INSERT OR REPLACE INTO access_table_fields VALUES (?, ?, ?, ?, ?, ?)", rows)
 
 
 def populate_type_mappings(cur: sqlite3.Cursor) -> None:
+    """Populate from config/seed-data/type_mappings.json."""
+    json_path = SEED_DIR / "type_mappings.json"
+    with open(json_path, encoding="utf-8") as f:
+        data = json.load(f)
     rows = [
-        ("AUTOINCREMENT", "Autonumber", "Direct mapping", "none"),
-        ("TEXT", "Text", "Truncation if Access TEXT > 255 chars", "low"),
-        ("MEMO", "Textarea", "Multi-line text preserved", "none"),
-        ("LONG", "Number", "32-bit integer preserved", "none"),
-        ("INTEGER", "Number", "16-bit to 32-bit, no loss", "none"),
-        ("CURRENCY", "Currency", "Fixed-point preserved in Zoho Currency field", "none"),
-        ("BIT", "Checkbox", "Access -1/0 must convert to Zoho true/false", "none"),
-        ("DATETIME", "DateTime", "Access has no timezone awareness", "low"),
-        ("SINGLE", "Decimal", "Single precision may show rounding in Zoho", "low"),
-        ("DOUBLE", "Decimal", "Double precision preserved", "none"),
-        ("BYTE", "Number", "0-255 range preserved", "none"),
-        ("GUID", "Text", "Stored as 36-char string in Zoho", "none"),
-        ("BINARY", "", "No Zoho equivalent - must convert or exclude", "high"),
-        ("IMAGE", "File", "OLE Object to Zoho file upload requires extraction", "medium"),
+        (r["access_type"], r["zoho_type"], r.get("conversion_notes"), r.get("data_loss_risk"))
+        for r in data
     ]
     cur.executemany("INSERT OR REPLACE INTO type_mappings VALUES (?, ?, ?, ?)", rows)
 
 
 def populate_field_name_mappings(cur: sqlite3.Cursor) -> None:
+    """Populate from config/seed-data/field_name_mappings.json."""
+    json_path = SEED_DIR / "field_name_mappings.json"
+    with open(json_path, encoding="utf-8") as f:
+        data = json.load(f)
     rows = [
-        # Departments
-        ("Departments", "ID", "departments", "department_id", "Autonumber, auto-mapped"),
-        ("Departments", "Department_Name", "departments", "name", "Text field rename"),
-        ("Departments", "Active", "departments", "is_active", "BIT to checkbox"),
-        # Clients
-        ("Clients", "ID", "clients", "client_id", "Autonumber, auto-mapped"),
-        ("Clients", "Client_Name", "clients", "name", "Text field rename"),
-        ("Clients", "Active", "clients", "is_active", "BIT to checkbox"),
-        # GL_Accounts
-        ("GL_Accounts", "GL_Code", "gl_accounts", "gl_code", None),
-        ("GL_Accounts", "Account_Name", "gl_accounts", "account_name", None),
-        ("GL_Accounts", "Expense_Category", "gl_accounts", "expense_category", None),
-        ("GL_Accounts", "Receipt_Required", "gl_accounts", "receipt_required", None),
-        ("GL_Accounts", "SARS_Provision", "gl_accounts", "SARS_Provision", None),
-        ("GL_Accounts", "Risk_Level", "gl_accounts", "Risk_Level", None),
-        ("GL_Accounts", "Active", "gl_accounts", "Active", None),
-        # Approval_Thresholds
-        ("Approval_Thresholds", "Tier_Name", "approval_thresholds", "tier_name", None),
-        ("Approval_Thresholds", "Max_Amount_ZAR", "approval_thresholds", "max_amount_zar", None),
-        ("Approval_Thresholds", "Approver_Role", "approval_thresholds", "approver_role", None),
-        ("Approval_Thresholds", "Tier_Order", "approval_thresholds", "Tier_Order", None),
-        ("Approval_Thresholds", "Active", "approval_thresholds", "Active", None),
-        # Expense_Claims
-        ("Expense_Claims", "Employee_Name", "expense_claims", "Employee_Name1", "Composite name field"),
-        ("Expense_Claims", "Email", "expense_claims", "Email", None),
-        ("Expense_Claims", "Submission_Date", "expense_claims", "Submission_Date", None),
-        ("Expense_Claims", "Claim_Reference", "expense_claims", "Claim_Reference", None),
-        ("Expense_Claims", "Department_ID", "expense_claims", "department", "FK -> lookup"),
-        ("Expense_Claims", "Client_ID", "expense_claims", "client", "FK -> lookup"),
-        ("Expense_Claims", "Expense_Date", "expense_claims", "Expense_Date", None),
-        ("Expense_Claims", "Category", "expense_claims", "category", None),
-        ("Expense_Claims", "Amount_ZAR", "expense_claims", "amount_zar", None),
-        ("Expense_Claims", "Description", "expense_claims", "description", None),
-        ("Expense_Claims", "VAT_Invoice_Type", "expense_claims", "VAT_Invoice_Type", None),
-        ("Expense_Claims", "POPIA_Consent", "expense_claims", "POPIA_Consent", None),
-        ("Expense_Claims", "Status", "expense_claims", "status", None),
-        ("Expense_Claims", "Rejection_Reason", "expense_claims", "Rejection_Reason", None),
-        ("Expense_Claims", "Version", "expense_claims", "Version", None),
-        ("Expense_Claims", "Retention_Expiry_Date", "expense_claims", "Retention_Expiry_Date", None),
-        ("Expense_Claims", "GL_Code_ID", "expense_claims", "gl_code", "FK -> lookup"),
-        # Approval_History
-        ("Approval_History", "Claim_ID", "approval_history", "claim", "FK -> lookup"),
-        ("Approval_History", "Action_Type", "approval_history", "action_1", "IMPORTANT: Zoho uses action_1"),
-        ("Approval_History", "Actor", "approval_history", "actor", None),
-        ("Approval_History", "Action_Timestamp", "approval_history", "timestamp", None),
-        ("Approval_History", "Comments", "approval_history", "comments", None),
+        (r["access_table"], r["access_field"], r["zoho_form"],
+         r["zoho_field"], r.get("transform_notes"))
+        for r in data
     ]
     cur.executemany("INSERT OR REPLACE INTO field_name_mappings VALUES (?, ?, ?, ?, ?)", rows)
 

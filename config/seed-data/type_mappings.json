@@ -1,0 +1,16 @@
+[
+  { "access_type": "AUTOINCREMENT", "zoho_type": "Autonumber", "conversion_notes": "Direct mapping", "data_loss_risk": "none" },
+  { "access_type": "TEXT",          "zoho_type": "Text",       "conversion_notes": "Truncation if Access TEXT > 255 chars", "data_loss_risk": "low" },
+  { "access_type": "MEMO",          "zoho_type": "Textarea",   "conversion_notes": "Multi-line text preserved", "data_loss_risk": "none" },
+  { "access_type": "LONG",          "zoho_type": "Number",     "conversion_notes": "32-bit integer preserved", "data_loss_risk": "none" },
+  { "access_type": "INTEGER",       "zoho_type": "Number",     "conversion_notes": "16-bit to 32-bit, no loss", "data_loss_risk": "none" },
+  { "access_type": "CURRENCY",      "zoho_type": "Currency",   "conversion_notes": "Fixed-point preserved in Zoho Currency field", "data_loss_risk": "none" },
+  { "access_type": "BIT",           "zoho_type": "Checkbox",   "conversion_notes": "Access -1/0 must convert to Zoho true/false", "data_loss_risk": "none" },
+  { "access_type": "DATETIME",      "zoho_type": "DateTime",   "conversion_notes": "Access has no timezone awareness", "data_loss_risk": "low" },
+  { "access_type": "SINGLE",        "zoho_type": "Decimal",    "conversion_notes": "Single precision may show rounding in Zoho", "data_loss_risk": "low" },
+  { "access_type": "DOUBLE",        "zoho_type": "Decimal",    "conversion_notes": "Double precision preserved", "data_loss_risk": "none" },
+  { "access_type": "BYTE",          "zoho_type": "Number",     "conversion_notes": "0-255 range preserved", "data_loss_risk": "none" },
+  { "access_type": "GUID",          "zoho_type": "Text",       "conversion_notes": "Stored as 36-char string in Zoho", "data_loss_risk": "none" },
+  { "access_type": "BINARY",        "zoho_type": "",           "conversion_notes": "No Zoho equivalent - must convert or exclude", "data_loss_risk": "high" },
+  { "access_type": "IMAGE",         "zoho_type": "File",       "conversion_notes": "OLE Object to Zoho file upload requires extraction", "data_loss_risk": "medium" }
+]
