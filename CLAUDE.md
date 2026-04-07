@@ -52,6 +52,16 @@ After a new .ds export from Creator:
 python tools/parse_ds_export.py exports/FILE.ds --generate-field-docs docs/build-guide/ --extract-scripts src/deluge/
 ```
 
+## .ds deployment rules
+- Apply ONE type of change at a time (fields, then scripts, then reports — never combined)
+- Test each import before adding the next change type
+- Always export .ds from Creator after successful import to capture normalised state
+- Report removal: ALWAYS use `ds_editor.py remove-reports` (handles 5-point dependency chain)
+- Never edit report menu/action blocks manually — use share_settings for permissions
+- .ds files MUST be UTF-8 without BOM
+- Log every Creator import error in `docs/discovery-log.md` with DL-XXX ID
+- Discovery docs use "unresolved" not "impossible" — keep investigation paths open
+
 If the linter DB is missing, rebuild it:
 ```
 python tools/build_deluge_db.py
