@@ -38,7 +38,7 @@ This repo is the version archive, documentation hub, deployment source, AND deve
 
 ## Project Status
 
-**Current version: v0.6.0** (Access Import Pipeline + Hybrid Linting + Mock Data)
+**Current version: v0.7.0** (International Standards Alignment + ESG Tracking)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
@@ -48,9 +48,10 @@ This repo is the version archive, documentation hub, deployment source, AND deve
 | 5 | Dashboards (Employee + Management) | Complete |
 | 6 | Governance gap remediation (15/16 gaps) | Complete |
 | 7 | Access-to-Zoho import tooling + hybrid linter | Complete |
-| 8 | Mock data generation (6 personas, 150 claims) | Complete |
-| 9 | API integration + stress testing | Next |
-| 10 | Two-Key threshold authorization | Planned |
+| 8 | Mock data generation (7 personas, 175 claims) | Complete |
+| 9 | Two-Key threshold authorization | Complete |
+| 10 | International standards alignment + ESG tracking | Complete |
+| 11 | API integration + stress testing | Next |
 
 15 of 16 governance gaps resolved. 1 remaining (G-05: hardcoded email addresses -- requires config table design decision).
 
@@ -109,13 +110,28 @@ South African compliance drives every architectural decision. This is not option
 - **COSO** -- Duplicate claim detection (same date + amount + submitter)
 - **ISO 37001** -- Risk_Level field on GL accounts; high-risk categories (Meals & Entertainment, Client Entertainment) flagged for enhanced scrutiny
 
+### International Standards & ESG
+
+| Standard | Alignment |
+|----------|-----------|
+| **ISSB IFRS S1/S2** | GL accounts tagged with ESG_Category and Carbon_Factor; approved claims carry Estimated_Carbon_KG for Scope 3 reporting |
+| **GRI Standards** | GRI 205 (anti-corruption via Risk_Level), GRI 301 (materials), GRI 302 (energy), GRI 305 (emissions via carbon factors) |
+| **ISO 26000** | Social responsibility tracking via ESG_Category on expense categories |
+| **ISO 37000** | Governance cross-referenced with King IV principles (see docs/compliance/king-iv-mapping.md) |
+| **ISSA 5000** | Sustainability assurance readiness via complete audit trail + ESG metadata |
+| **Companies Act s72/s76** | Social and ethics committee data; director duty of care via Two-Key approval |
+
+**Configurable compliance**: `Compliance_Config` table enables org-type-specific controls (PRIVATE, JSE_LISTED, SOE, MULTINATIONAL) with flags for JSE Listings, PFMA, B-BBEE, ESG reporting, and carbon tracking.
+
+See [docs/compliance/international-standards-mapping.md](docs/compliance/international-standards-mapping.md) for the full alignment matrix.
+
 ## Architecture
 
 ```
 Platform:    Zoho Creator (Free Trial -> Standard plan)
 Scripting:   Deluge (event-driven, server-side)
 Timezone:    Africa/Johannesburg
-Data model:  6 forms (4 config/lookup + 1 transaction + 1 audit)
+Data model:  7 forms (5 config/lookup + 1 transaction + 1 audit)
 Approval:    Two-level process (LM -> HoD conditional escalation)
 Deployment:  .ds file import (validated: structural + permission + script changes persist)
 ```

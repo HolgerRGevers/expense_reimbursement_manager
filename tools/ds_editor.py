@@ -11,6 +11,7 @@ Subcommands:
     restrict-menus       Strip Edit/Duplicate/Delete from report menus
     rebuild-dashboard    Replace a page's ZML content with native components
     apply-two-key        Deploy Two-Key Threshold Authorization schema changes
+    apply-esg            Deploy ESG and Compliance Config schema changes
     audit                Show current state: descriptions, reports, menu permissions
 
 Usage:
@@ -19,6 +20,7 @@ Usage:
     python tools/ds_editor.py restrict-menus exports/FILE.ds --reports name1,name2
     python tools/ds_editor.py rebuild-dashboard exports/FILE.ds --page Employee_Dashboard
     python tools/ds_editor.py apply-two-key exports/FILE.ds
+    python tools/ds_editor.py apply-esg exports/FILE.ds
     python tools/ds_editor.py audit exports/FILE.ds
 """
 
@@ -469,6 +471,343 @@ def build_employee_dashboard() -> str:
 
 
 DASHBOARD_BUILDERS["Employee_Dashboard"] = build_employee_dashboard
+
+
+def build_sustainability_dashboard() -> str:
+    """Build Sustainability Dashboard ZML with ESG reporting components."""
+    header = (
+        "<row>\n\t<column width='100%'>\n"
+        "\t<panel elementName='ESG_Header_Banner'\n\t\tbgColor = '#0F6E56'\n>\n"
+        "<pr width='fill' height='fill'>\n"
+        "<pc\n\tpadding = '24px'\n\twidth = '75%'\n\thAlign = 'left'\n\tvAlign = 'middle'\n>\n"
+        "<pr><pc>\n<text\n\tcolor = '#FFFFFF'\n\tsize = '26px'\n\tbold = 'true'\n"
+        "\ttype = 'Text'\n\tvalue = 'Sustainability Dashboard'\n/>\n</pc></pr>\n"
+        "<pr><pc>\n<text\n\tmarginTop = '5px'\n\tcolor = '#C8E6C9'\n\tsize = '14px'\n"
+        "\ttype = 'Text'\n\tvalue = 'ESG tracking and carbon footprint reporting (ISSB/GRI aligned)'\n/>\n"
+        "</pc></pr>\n</pc>\n"
+        "</pr>\n</panel>\n\t</column>\n</row>"
+    )
+
+    kpis = (
+        "<row>\n\t<column width='100%'>\n"
+        "\t<panel elementName='ESG_KPI_Tiles'\n\t\ttitle = 'ESG Key Metrics'\n\t\ttitleSize = '15px'\n>\n"
+        "<pr width='fill' height='fill'>\n<pc\n\tpaddingTop = '10px'\n"
+        "\tbgColor = '#FFFFFF'\n\twidth = '100%'\n>\n<pr width='fill' height='fill'>\n"
+        + _build_kpi_tile("#0F6E56", "#1ABE75", "nature-earth",
+                          "thisapp.expense_claims.Estimated_Carbon_KG.sum",
+                          "Total Carbon (kg CO2e)", "#E1F5EE",
+                          'status == &quot;Approved&quot;')
+        + _build_kpi_tile("#854F0B", "#F6BC2B", "transportation-car",
+                          "thisapp.expense_claims.ID.count",
+                          "Travel Emissions", "#FAEEDA",
+                          'ESG_Category == &quot;Travel Emissions&quot; &amp;&amp; status == &quot;Approved&quot;')
+        + _build_kpi_tile("#8B2020", "#E2335C", "business-percentage-39",
+                          "thisapp.expense_claims.amount_zar.sum",
+                          "High-Risk Spend (ZAR)", "#F5D5D5",
+                          'Risk_Level == &quot;High&quot; &amp;&amp; status == &quot;Approved&quot;')
+        + _build_kpi_tile("#3C3489", "#734AD0", "education-paper",
+                          "thisapp.expense_claims.ID.count",
+                          "ESG-Tagged Claims", "#CECBF6",
+                          'ESG_Category != &quot;None&quot;')
+        + "</pr>\n</pc>\n</pr>\n</panel>\n\t</column>\n</row>"
+    )
+
+    charts = (
+        "<row>\n"
+        "\t<column width='50%'>\n\t<chart \n\telementName='ESG_Category_Chart'\n"
+        "\t\ttype = 'Pie'\n\t\ttitle = 'Approved Spend by ESG Category'\n\t\ttitleSize = '15px'\n"
+        "\t\txfield = 'ESG_Category'\n\t\tyfield = 'sum:amount_zar'\n"
+        "\t\tappLinkName = 'thisapp'\n\t\tformLinkName = 'expense_claims'\n"
+        "\t\tcriteria = 'status == &quot;Approved&quot;'\n"
+        "\t\tlegendPos = 'bottom'\n\t\theightType = 'custom'\n\t\theightValue = '350'\n"
+        "/>\n\t</column>\n"
+        "\t<column width='50%'>\n\t<chart \n\telementName='Carbon_Trend_Chart'\n"
+        "\t\ttype = 'Bar'\n\t\ttitle = 'Carbon Footprint by Category (kg CO2e)'\n\t\ttitleSize = '15px'\n"
+        "\t\txfield = 'category'\n\t\tyfield = 'sum:Estimated_Carbon_KG'\n"
+        "\t\tappLinkName = 'thisapp'\n\t\tformLinkName = 'expense_claims'\n"
+        "\t\tcriteria = 'status == &quot;Approved&quot;'\n"
+        "\t\tlegendPos = 'none'\n\t\theightType = 'custom'\n\t\theightValue = '350'\n"
+        "/>\n\t</column>\n</row>"
+    )
+
+    report = (
+        "<row>\n\t<column width='100%'>\n\t<report \n"
+        "\telementName='ESG_Claims_Report'\n\t\tappLinkName = 'thisapp'\n"
+        "\t\tlinkName = 'expense_claims_Report'\n\t\tiszreport = 'false'\n"
+        "\t\tzc_AddRec = 'false'\n\t\tzc_EditRec = 'false'\n"
+        "\t\tzc_Print = 'false'\n\t\tzc_DelRec = 'false'\n"
+        "\t\tzc_DuplRec = 'false'\n\t\tzc_EditBulkRec = 'false'\n"
+        "\t\tzc_BulkDelete = 'false'\n\t\tzc_BulkDuplicate = 'false'\n"
+        "\t\tzc_Export = 'false'\n\theightType = 'auto'\n\theightValue = '600'\n"
+        "/>\n\t</column>\n</row>"
+    )
+
+    cfg = '{"layout":{"displayType":"card","design":"fluid","style":"padding:0px;"}}'
+    return (
+        f"<zml webDeviceConfig='{cfg}'>\n\t<layout>\n"
+        f"{header}\n{kpis}\n{charts}\n{report}\n\t</layout>\n</zml>"
+    )
+
+
+DASHBOARD_BUILDERS["Sustainability_Dashboard"] = build_sustainability_dashboard
+
+
+def apply_esg(ds_path: Path, dry_run: bool = False) -> int:
+    """Deploy ESG and Compliance Config schema changes to a .ds file.
+
+    Performs 4 targeted modifications:
+      1. Add ESG fields to gl_accounts form
+      2. Add ESG fields to expense_claims form
+      3. Add compliance_config form
+      4. Add ESG_Category picklist values to gl_accounts
+
+    Returns the number of modifications applied.
+    """
+    with open(ds_path, encoding="utf-8") as f:
+        content = f.read()
+
+    original = content
+    count = 0
+    skipped: list[str] = []
+
+    # ------------------------------------------------------------------
+    # Modification 1: Add ESG fields to gl_accounts form
+    # ------------------------------------------------------------------
+    if "ESG_Category" in content and "form gl_accounts" in content:
+        # Check if ESG_Category is actually in the gl_accounts form, not elsewhere
+        gl_start = content.find("form gl_accounts")
+        gl_end = content.find("\n\t\t}", gl_start) if gl_start != -1 else -1
+        if gl_start != -1 and gl_end != -1 and "ESG_Category" in content[gl_start:gl_end]:
+            skipped.append("Mod 1 (gl_accounts ESG fields): ESG_Category already present")
+        else:
+            skipped.append("Mod 1 (gl_accounts ESG fields): ESG_Category found but not in gl_accounts form context")
+    elif "form gl_accounts" not in content:
+        skipped.append("Mod 1 (gl_accounts ESG fields): form gl_accounts not found in .ds file")
+    else:
+        gl_start = content.find("form gl_accounts")
+        if gl_start == -1:
+            print("ERROR: Could not find form gl_accounts", file=sys.stderr)
+            sys.exit(1)
+        actions_marker = "\n\t\t\tactions"
+        actions_pos = content.find(actions_marker, gl_start)
+        if actions_pos == -1:
+            print("ERROR: Could not find actions block in gl_accounts", file=sys.stderr)
+            sys.exit(1)
+
+        esg_gl_fields = (
+            "\t\t\tESG_Category\n"
+            "\t\t\t(\n"
+            "\t\t\t\ttype = picklist\n"
+            '\t\t\t\tdisplayname = "ESG Category"\n'
+            '\t\t\t\tvalues = {"Travel Emissions","Energy","Waste","Social","None"}\n'
+            "\t\t\t\tdescription\n"
+            "\t\t\t\t[\n"
+            "\t\t\t\t\ttype = help_text\n"
+            '\t\t\t\t\tmessage = "ISSB/GRI sustainability category: Travel Emissions, Energy, Waste, Social, or None."\n'
+            "\t\t\t\t]\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tCarbon_Factor\n"
+            "\t\t\t(\n"
+            "\t\t\t\ttype = decimal\n"
+            '\t\t\t\tdisplayname = "Carbon Factor"\n'
+            "\t\t\t\tdescription\n"
+            "\t\t\t\t[\n"
+            "\t\t\t\t\ttype = help_text\n"
+            '\t\t\t\t\tmessage = "Estimated kg CO2e per ZAR spent. DEFRA-adapted emission factor for SA energy mix."\n'
+            "\t\t\t\t]\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tGRI_Indicator\n"
+            "\t\t\t(\n"
+            "    \t\t\ttype = text\n"
+            '\t\t\t\tdisplayname = "GRI Indicator"\n'
+            "\t\t\t\tdescription\n"
+            "\t\t\t\t[\n"
+            "\t\t\t\t\ttype = help_text\n"
+            '\t\t\t\t\tmessage = "GRI Standards indicator code mapped to this GL account (e.g., GRI 305-3)."\n'
+            "\t\t\t\t]\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+        )
+        content = content[:actions_pos + 1] + esg_gl_fields + content[actions_pos + 1:]
+        count += 1
+        print("  Mod 1: Added 3 ESG fields to gl_accounts form")
+
+    # ------------------------------------------------------------------
+    # Modification 2: Add ESG fields to expense_claims form
+    # ------------------------------------------------------------------
+    if "Estimated_Carbon_KG" in content:
+        skipped.append("Mod 2 (expense_claims ESG fields): Estimated_Carbon_KG already present")
+    else:
+        ec_start = content.find("form expense_claims")
+        if ec_start == -1:
+            print("ERROR: Could not find form expense_claims", file=sys.stderr)
+            sys.exit(1)
+        # Insert after Key_2_Timestamp field — find its closing )
+        k2t_pos = content.find("Key_2_Timestamp", ec_start)
+        if k2t_pos == -1:
+            # Fall back to inserting before actions
+            marker = "\n\t\t\tactions"
+            insert_pos = content.find(marker, ec_start)
+            if insert_pos == -1:
+                print("ERROR: Could not find actions block in expense_claims", file=sys.stderr)
+                sys.exit(1)
+        else:
+            # Find the closing ) of Key_2_Timestamp
+            close_paren = content.find(")", k2t_pos)
+            insert_pos = close_paren + 1
+            # Skip past the newline after )
+            if insert_pos < len(content) and content[insert_pos] == "\n":
+                insert_pos += 1
+
+        esg_ec_fields = (
+            "\t\t\tEstimated_Carbon_KG\n"
+            "\t\t\t(\n"
+            "\t\t\t\ttype = decimal\n"
+            '\t\t\t\tdisplayname = "Estimated Carbon KG"\n'
+            "\t\t\t\tprivate = true\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tESG_Category\n"
+            "\t\t\t(\n"
+            "    \t\t\ttype = text\n"
+            '\t\t\t\tdisplayname = "ESG Category"\n'
+            "\t\t\t\tprivate = true\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+        )
+        content = content[:insert_pos] + esg_ec_fields + content[insert_pos:]
+        count += 1
+        print("  Mod 2: Added 2 ESG fields to expense_claims form")
+
+    # ------------------------------------------------------------------
+    # Modification 3: Add compliance_config form
+    # ------------------------------------------------------------------
+    if "form compliance_config" in content:
+        skipped.append("Mod 3 (compliance_config form): form already present")
+    else:
+        # Find the end of all form definitions — insert before the first
+        # non-form top-level block (reports, pages, etc.)
+        # Best insertion point: after the last form's closing \t\t}
+        # Find "form approval_history" or "form gl_accounts" closing
+        # Safer: insert just before the first "report" block
+        report_pos = content.find("\n\t\treport ")
+        if report_pos == -1:
+            report_pos = content.find("\n\t\tpage ")
+        if report_pos == -1:
+            skipped.append("Mod 3 (compliance_config form): could not find insertion point")
+        else:
+            cc_form = (
+                "\n\t\tform compliance_config\n"
+                "\t\t{\n"
+                '\t\t\tdisplayname = "Compliance Config"\n'
+                "\t\t\tConfig_Key\n"
+                "\t\t\t(\n"
+                "    \t\t\ttype = text\n"
+                '\t\t\t\tdisplayname = "Config Key"\n'
+                "\t\t\t\tmust have\n"
+                "\t\t\t\tdescription\n"
+                "\t\t\t\t[\n"
+                "\t\t\t\t\ttype = help_text\n"
+                '\t\t\t\t\tmessage = "Unique compliance setting name (e.g., ORG_TYPE, ESG_REPORTING)."\n'
+                "\t\t\t\t]\n"
+                " \t\t\t\trow = 1\n"
+                " \t\t\t\tcolumn = 1\n"
+                "\t\t\t\twidth = medium\n"
+                "\t\t\t)\n"
+                "\t\t\tConfig_Value\n"
+                "\t\t\t(\n"
+                "    \t\t\ttype = text\n"
+                '\t\t\t\tdisplayname = "Config Value"\n'
+                "\t\t\t\tdescription\n"
+                "\t\t\t\t[\n"
+                "\t\t\t\t\ttype = help_text\n"
+                '\t\t\t\t\tmessage = "Setting value. Interpretation depends on Config_Key."\n'
+                "\t\t\t\t]\n"
+                " \t\t\t\trow = 1\n"
+                " \t\t\t\tcolumn = 1\n"
+                "\t\t\t\twidth = medium\n"
+                "\t\t\t)\n"
+                "\t\t\tDescription\n"
+                "\t\t\t(\n"
+                "    \t\t\ttype = text\n"
+                '\t\t\t\tdisplayname = "Description"\n'
+                "\t\t\t\tdescription\n"
+                "\t\t\t\t[\n"
+                "\t\t\t\t\ttype = help_text\n"
+                '\t\t\t\t\tmessage = "Human-readable explanation of this compliance setting."\n'
+                "\t\t\t\t]\n"
+                " \t\t\t\trow = 1\n"
+                " \t\t\t\tcolumn = 1\n"
+                "\t\t\t\twidth = medium\n"
+                "\t\t\t)\n"
+                "\t\t\tActive\n"
+                "\t\t\t(\n"
+                "\t\t\t\ttype = checkbox\n"
+                '\t\t\t\tdisplayname = "Active"\n'
+                "\t\t\t\tinitial value = true\n"
+                "\t\t\t\tdescription\n"
+                "\t\t\t\t[\n"
+                "\t\t\t\t\ttype = help_text\n"
+                '\t\t\t\t\tmessage = "Whether this compliance setting is currently active."\n'
+                "\t\t\t\t]\n"
+                " \t\t\t\trow = 1\n"
+                " \t\t\t\tcolumn = 1\n"
+                "\t\t\t\twidth = medium\n"
+                "\t\t\t)\n"
+                "\t\t\tactions\n"
+                "\t\t\t{\n"
+                "\t\t\t}\n"
+                "\t\t}\n"
+            )
+            content = content[:report_pos] + cc_form + content[report_pos:]
+            count += 1
+            print("  Mod 3: Added compliance_config form")
+
+    # ------------------------------------------------------------------
+    # Report skipped modifications
+    # ------------------------------------------------------------------
+    for s in skipped:
+        print(f"  SKIPPED: {s}")
+
+    # ------------------------------------------------------------------
+    # Validate brace balance
+    # ------------------------------------------------------------------
+    open_braces = content.count("{")
+    close_braces = content.count("}")
+    open_parens = content.count("(")
+    close_parens = content.count(")")
+    if open_braces != close_braces:
+        print(f"  WARNING: Brace imbalance after modifications: {{ = {open_braces}, }} = {close_braces}")
+    else:
+        print(f"  Brace balance OK: {open_braces} pairs")
+    if open_parens != close_parens:
+        print(f"  WARNING: Paren imbalance after modifications: ( = {open_parens}, ) = {close_parens}")
+    else:
+        print(f"  Paren balance OK: {open_parens} pairs")
+
+    # ------------------------------------------------------------------
+    # Write result
+    # ------------------------------------------------------------------
+    if dry_run:
+        print(f"\n  DRY RUN: {count} modification(s) would be applied (file not changed)")
+    else:
+        if count > 0:
+            with open(ds_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+    return count
 
 
 def replace_page_content(ds_path: Path, page_name: str, new_zml: str) -> None:
@@ -951,6 +1290,11 @@ def main() -> None:
     p_twokey.add_argument("--scripts-dir", default="src/deluge", help="Path to Deluge scripts directory")
     p_twokey.add_argument("--dry-run", action="store_true", help="Show changes without modifying file")
 
+    # apply-esg
+    p_esg = sub.add_parser("apply-esg", help="Deploy ESG and Compliance Config schema changes")
+    p_esg.add_argument("ds_file", help="Path to .ds file")
+    p_esg.add_argument("--dry-run", action="store_true", help="Show changes without modifying file")
+
     # audit
     p_audit = sub.add_parser("audit", help="Audit descriptions, reports, menus")
     p_audit.add_argument("ds_file", help="Path to .ds file")
@@ -999,6 +1343,10 @@ def main() -> None:
         scripts = Path(args.scripts_dir) if hasattr(args, "scripts_dir") else Path("src/deluge")
         count = apply_two_key(ds_path, scripts, dry_run=getattr(args, "dry_run", False))
         print(f"Applied {count} Two-Key modification(s) to {ds_path}")
+
+    elif args.command == "apply-esg":
+        count = apply_esg(ds_path, dry_run=getattr(args, "dry_run", False))
+        print(f"Applied {count} ESG modification(s) to {ds_path}")
 
     elif args.command == "audit":
         audit_ds(ds_path)

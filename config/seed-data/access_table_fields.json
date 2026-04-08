@@ -15,6 +15,9 @@
   { "table_name": "GL_Accounts",         "field_name": "SARS_Provision",       "access_type": "TEXT(100)",     "zoho_form": "gl_accounts",          "zoho_field": "SARS_Provision",        "notes": null },
   { "table_name": "GL_Accounts",         "field_name": "Risk_Level",           "access_type": "TEXT(20)",      "zoho_form": "gl_accounts",          "zoho_field": "Risk_Level",            "notes": null },
   { "table_name": "GL_Accounts",         "field_name": "Active",               "access_type": "BIT",           "zoho_form": "gl_accounts",          "zoho_field": "Active",                "notes": null },
+  { "table_name": "GL_Accounts",         "field_name": "ESG_Category",         "access_type": "TEXT(50)",      "zoho_form": "gl_accounts",          "zoho_field": "ESG_Category",          "notes": "ISSB/GRI categorisation" },
+  { "table_name": "GL_Accounts",         "field_name": "Carbon_Factor",        "access_type": "DOUBLE",        "zoho_form": "gl_accounts",          "zoho_field": "Carbon_Factor",         "notes": "kg CO2e per ZAR spent" },
+  { "table_name": "GL_Accounts",         "field_name": "GRI_Indicator",        "access_type": "TEXT(50)",      "zoho_form": "gl_accounts",          "zoho_field": "GRI_Indicator",         "notes": "GRI Standards reference" },
 
   { "table_name": "Approval_Thresholds", "field_name": "ID",                   "access_type": "AUTOINCREMENT", "zoho_form": "approval_thresholds",  "zoho_field": null,                    "notes": "PK" },
   { "table_name": "Approval_Thresholds", "field_name": "Tier_Name",            "access_type": "TEXT(100)",     "zoho_form": "approval_thresholds",  "zoho_field": "tier_name",             "notes": "NOT NULL" },
@@ -49,11 +52,19 @@
   { "table_name": "Expense_Claims",      "field_name": "Key_1_Timestamp",      "access_type": "DATETIME",     "zoho_form": "expense_claims",       "zoho_field": "Key_1_Timestamp",       "notes": "When Key 1 approved, used for Key 2 SLA" },
   { "table_name": "Expense_Claims",      "field_name": "Key_2_Approver",       "access_type": "TEXT(200)",     "zoho_form": "expense_claims",       "zoho_field": "Key_2_Approver",        "notes": "Stores Key 2 username" },
   { "table_name": "Expense_Claims",      "field_name": "Key_2_Timestamp",      "access_type": "DATETIME",     "zoho_form": "expense_claims",       "zoho_field": "Key_2_Timestamp",       "notes": "When Key 2 approved" },
+  { "table_name": "Expense_Claims",      "field_name": "Estimated_Carbon_KG",  "access_type": "DOUBLE",        "zoho_form": "expense_claims",       "zoho_field": "Estimated_Carbon_KG",   "notes": "Calculated: Amount_ZAR * GL.Carbon_Factor" },
+  { "table_name": "Expense_Claims",      "field_name": "ESG_Category",         "access_type": "TEXT(50)",      "zoho_form": "expense_claims",       "zoho_field": "ESG_Category",          "notes": "Denormalized from GL account on approval" },
 
   { "table_name": "Approval_History",    "field_name": "ID",                   "access_type": "AUTOINCREMENT", "zoho_form": "approval_history",     "zoho_field": null,                    "notes": "PK" },
   { "table_name": "Approval_History",    "field_name": "Claim_ID",             "access_type": "LONG",          "zoho_form": "approval_history",     "zoho_field": "claim",                 "notes": "FK -> Expense_Claims.ID" },
   { "table_name": "Approval_History",    "field_name": "Action_Type",          "access_type": "TEXT(100)",     "zoho_form": "approval_history",     "zoho_field": "action_1",              "notes": "IMPORTANT: Zoho uses action_1" },
   { "table_name": "Approval_History",    "field_name": "Actor",                "access_type": "TEXT(200)",     "zoho_form": "approval_history",     "zoho_field": "actor",                 "notes": null },
   { "table_name": "Approval_History",    "field_name": "Action_Timestamp",     "access_type": "DATETIME",     "zoho_form": "approval_history",     "zoho_field": "timestamp",             "notes": null },
-  { "table_name": "Approval_History",    "field_name": "Comments",             "access_type": "MEMO",          "zoho_form": "approval_history",     "zoho_field": "comments",              "notes": null }
+  { "table_name": "Approval_History",    "field_name": "Comments",             "access_type": "MEMO",          "zoho_form": "approval_history",     "zoho_field": "comments",              "notes": null },
+
+  { "table_name": "Compliance_Config",   "field_name": "ID",                   "access_type": "AUTOINCREMENT", "zoho_form": "compliance_config",    "zoho_field": null,                    "notes": "PK" },
+  { "table_name": "Compliance_Config",   "field_name": "Config_Key",           "access_type": "TEXT(100)",     "zoho_form": "compliance_config",    "zoho_field": "Config_Key",            "notes": "NOT NULL, unique setting name" },
+  { "table_name": "Compliance_Config",   "field_name": "Config_Value",         "access_type": "TEXT(200)",     "zoho_form": "compliance_config",    "zoho_field": "Config_Value",          "notes": null },
+  { "table_name": "Compliance_Config",   "field_name": "Description",          "access_type": "TEXT(500)",     "zoho_form": "compliance_config",    "zoho_field": "Description",           "notes": null },
+  { "table_name": "Compliance_Config",   "field_name": "Active",               "access_type": "BIT",           "zoho_form": "compliance_config",    "zoho_field": "Active",                "notes": null }
 ]

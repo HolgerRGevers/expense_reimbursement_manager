@@ -31,6 +31,10 @@ No CI/CD — Creator has no structural deployment API. Code is applied manually 
 - Strings use double quotes only (never single quotes)
 - `ifnull(value, fallback)` for every query result
 - `Added_User` in insert tasks ONLY accepts `zoho.loginuser` or `zoho.adminuser` (NOT `zoho.adminuserid`)
+- ESG fields (`ESG_Category`, `Estimated_Carbon_KG`) are populated alongside GL code on approval
+- `Carbon_Factor` uses `ifnull(glRec.Carbon_Factor, 0)` — never assume GL record has ESG fields
+- `Estimated_Carbon_KG = input.amount_zar * carbonFactor` — calculated, not stored on GL account
+- `Compliance_Config` queries use `Config_Key == "KEY_NAME" && Active == true` pattern
 
 ## Tooling workflow
 After editing any .dg file:
@@ -120,6 +124,8 @@ python tools/ds_editor.py audit exports/FILE.ds                              # c
 python tools/ds_editor.py add-descriptions exports/FILE.ds                   # from config/field-descriptions.yaml
 python tools/ds_editor.py remove-reports exports/FILE.ds --reports name1,name2
 python tools/ds_editor.py restrict-menus exports/FILE.ds --reports name1,name2
+python tools/ds_editor.py apply-esg exports/FILE.ds                            # deploy ESG + compliance_config schema
+python tools/ds_editor.py rebuild-dashboard exports/FILE.ds --page Sustainability_Dashboard
 ```
 
 ## UI standards
@@ -141,6 +147,9 @@ python tools/ds_editor.py restrict-menus exports/FILE.ds --reports name1,name2
 
 ## Governance context
 South African compliance: King IV principles, SARS S11(a), segregation of duties.
+International alignment: ISSB (IFRS S1/S2), GRI Standards, ISO 26000, ISO 37000, ISSA 5000.
+ESG tracking: GL accounts carry ESG_Category and Carbon_Factor; approved claims carry Estimated_Carbon_KG.
+Configurable: Compliance_Config table enables org-type-specific controls (PRIVATE, JSE_LISTED, SOE, MULTINATIONAL).
 This is not optional flavour — it drives architectural decisions (self-approval prevention, audit trail writes, configurable thresholds).
 
 ## Deluge quick-reference

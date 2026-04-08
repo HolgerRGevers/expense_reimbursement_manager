@@ -224,6 +224,17 @@ def build_category_to_gl(gl_accounts: list[dict]) -> dict[str, int]:
     return mapping
 
 
+def build_category_esg_maps(gl_accounts: list[dict]) -> tuple[dict[str, float], dict[str, str]]:
+    """Map Expense_Category -> Carbon_Factor and ESG_Category."""
+    carbon: dict[str, float] = {}
+    esg: dict[str, str] = {}
+    for gl in gl_accounts:
+        cat = gl["Expense_Category"]
+        carbon[cat] = gl.get("Carbon_Factor", 0)
+        esg[cat] = gl.get("ESG_Category", "None")
+    return carbon, esg
+
+
 # ---------------------------------------------------------------------------
 # CSV writers for lookup tables
 # ---------------------------------------------------------------------------
@@ -260,6 +271,7 @@ def write_gl_accounts_csv(output_dir: str, data: list[dict]) -> int:
         writer.writerow([
             "ID", "GL_Code", "Account_Name", "Expense_Category",
             "Receipt_Required", "SARS_Provision", "Risk_Level", "Active",
+            "ESG_Category", "Carbon_Factor", "GRI_Indicator",
         ])
         for idx, g in enumerate(data, start=1):
             receipt = "true" if g["Receipt_Required"] else "false"
@@ -273,6 +285,9 @@ def write_gl_accounts_csv(output_dir: str, data: list[dict]) -> int:
                 g["SARS_Provision"],
                 g.get("Risk_Level", "Standard"),
                 active,
+                g.get("ESG_Category", "None"),
+                g.get("Carbon_Factor", 0),
+                g.get("GRI_Indicator", ""),
             ])
     return len(data)
 
@@ -300,6 +315,24 @@ def write_thresholds_csv(output_dir: str, data: list[dict]) -> int:
                 dual,
                 t.get("Dual_Approval_Role", ""),
                 f"{t['Dual_Threshold_ZAR']:.2f}" if t.get("Dual_Threshold_ZAR") else "",
+            ])
+    return len(data)
+
+
+def write_compliance_config_csv(output_dir: str, data: list[dict]) -> int:
+    """Write Compliance_Config.csv with ID column."""
+    path = os.path.join(output_dir, "Compliance_Config.csv")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["ID", "Config_Key", "Config_Value", "Description", "Active"])
+        for idx, c in enumerate(data, start=1):
+            active = "true" if c["Active"] else "false"
+            writer.writerow([
+                idx,
+                c["Config_Key"],
+                c["Config_Value"],
+                c.get("Description", ""),
+                active,
             ])
     return len(data)
 
@@ -368,12 +401,18 @@ def fmt_amount(amount: float) -> str:
 def generate_claims(
     category_to_gl: dict[str, int],
     today: date,
+    gl_carbon_factors: dict[str, float] | None = None,
+    gl_esg_categories: dict[str, str] | None = None,
 ) -> tuple[list[dict], int, int]:
     """
     Generate 175 expense claims across 5 intervals x 7 employees x 5 claims.
 
     Returns (claims_list, valid_count, error_count).
     """
+    if gl_carbon_factors is None:
+        gl_carbon_factors = {}
+    if gl_esg_categories is None:
+        gl_esg_categories = {}
     claims: list[dict] = []
     claim_id = 0
     error_count = 0
@@ -585,6 +624,8 @@ def generate_claims(
                     "Key_1_Timestamp": fmt_datetime(submission_dt + timedelta(days=2)) if (amount > 5000 and status not in ("Rejected", "Resubmitted") and behavior != "rookie") else "",
                     "Key_2_Approver": "Finance Director" if (amount > 5000 and status == "Submitted" and behavior not in ("rookie", "high_value")) else "",
                     "Key_2_Timestamp": fmt_datetime(submission_dt + timedelta(days=3)) if (amount > 5000 and status == "Submitted" and behavior not in ("rookie", "high_value")) else "",
+                    "Estimated_Carbon_KG": fmt_amount(amount * gl_carbon_factors.get(category, 0)),
+                    "ESG_Category": gl_esg_categories.get(category, "None"),
                 }
                 claims.append(claim)
 
@@ -601,6 +642,7 @@ def write_claims_csv(output_dir: str, claims: list[dict]) -> int:
         "Rejection_Reason", "Version", "Retention_Expiry_Date", "GL_Code_ID",
         "Supporting_Documents", "Requires_Dual_Approval",
         "Key_1_Approver", "Key_1_Timestamp", "Key_2_Approver", "Key_2_Timestamp",
+        "Estimated_Carbon_KG", "ESG_Category",
     ]
     path = os.path.join(output_dir, "Expense_Claims.csv")
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -980,9 +1022,20 @@ def main() -> None:
 
     # --- Build category -> GL mapping ---
     category_to_gl = build_category_to_gl(gl_accounts)
+    gl_carbon_factors, gl_esg_categories = build_category_esg_maps(gl_accounts)
+
+    # --- Write compliance config CSV ---
+    cc_path = SEED_DIR / "compliance_config.json"
+    if cc_path.exists():
+        cc_data = load_seed_json("compliance_config.json")
+        cc_count = write_compliance_config_csv(args.output_dir, cc_data)
+    else:
+        cc_count = 0
 
     # --- Generate expense claims ---
-    claims, valid_count, error_count = generate_claims(category_to_gl, today)
+    claims, valid_count, error_count = generate_claims(
+        category_to_gl, today, gl_carbon_factors, gl_esg_categories,
+    )
     claims_count = write_claims_csv(args.output_dir, claims)
 
     # --- Generate approval history ---
@@ -995,6 +1048,7 @@ def main() -> None:
     print(f"  Clients: {client_count} records")
     print(f"  GL_Accounts: {gl_count} records")
     print(f"  Approval_Thresholds: {thresh_count} records")
+    print(f"  Compliance_Config: {cc_count} records")
     print(
         f"  Expense_Claims: {claims_count} records "
         f"({valid_count} valid, {error_count} with errors)"

@@ -1,0 +1,10 @@
+[
+  { "Config_Key": "ORG_TYPE", "Config_Value": "PRIVATE", "Description": "Organisation type: PRIVATE, JSE_LISTED, SOE, MULTINATIONAL", "Active": true },
+  { "Config_Key": "JSE_CONTROLS_REQUIRED", "Config_Value": "false", "Description": "JSE Listings Requirements internal controls disclosure", "Active": true },
+  { "Config_Key": "PFMA_APPLICABLE", "Config_Value": "false", "Description": "Public Finance Management Act applicable (SOE/government)", "Active": true },
+  { "Config_Key": "BBBEE_TRACKING", "Config_Value": "false", "Description": "B-BBEE preferential procurement tracking", "Active": true },
+  { "Config_Key": "ESG_REPORTING", "Config_Value": "true", "Description": "Enable ESG categorisation on expense claims", "Active": true },
+  { "Config_Key": "CARBON_TRACKING", "Config_Value": "true", "Description": "Enable carbon estimation (kg CO2e) on approval", "Active": true },
+  { "Config_Key": "ISSB_ALIGNED", "Config_Value": "true", "Description": "IFRS S1/S2 sustainability disclosure readiness", "Active": true },
+  { "Config_Key": "GRI_ALIGNED", "Config_Value": "true", "Description": "GRI Standards sustainability reporting readiness", "Active": true }
+]

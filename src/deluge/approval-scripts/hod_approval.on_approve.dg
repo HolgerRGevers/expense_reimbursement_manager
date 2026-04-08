@@ -55,6 +55,10 @@ glRec = gl_accounts[expense_category == input.category && Active == true];
 if (glRec != null && glRec.count() > 0)
 {
     input.gl_code = glRec.gl_code;
+    // ESG auto-population (ISSB/GRI metadata)
+    input.ESG_Category = ifnull(glRec.ESG_Category, "None");
+    carbonFactor = ifnull(glRec.Carbon_Factor, 0);
+    input.Estimated_Carbon_KG = input.amount_zar * carbonFactor;
 }
 
 if (input.amount_zar > dualThreshold)
@@ -71,7 +75,7 @@ if (input.amount_zar > dualThreshold)
         action_1 = "Approved (Key 1)"
         actor = zoho.loginuser
         timestamp = zoho.currenttime
-        comments = "HoD approved (Key 1). Amount R" + input.amount_zar + " exceeds dual threshold (R" + dualThreshold + "). GL: " + ifnull(input.gl_code, "UNMAPPED") + ". Routed to Finance Director for Key 2."
+        comments = "HoD approved (Key 1). Amount R" + input.amount_zar + " exceeds dual threshold (R" + dualThreshold + "). GL: " + ifnull(input.gl_code, "UNMAPPED") + " | ESG: " + ifnull(input.ESG_Category, "None") + " | Carbon: " + ifnull(input.Estimated_Carbon_KG, 0) + "kg. Routed to Finance Director for Key 2."
         Added_User = zoho.loginuser
     ];
 
@@ -94,7 +98,7 @@ else
         action_1 = "Approved (HoD)"
         actor = zoho.loginuser
         timestamp = zoho.currenttime
-        comments = "Head of Department final approval. GL: " + ifnull(input.gl_code, "UNMAPPED")
+        comments = "Head of Department final approval. GL: " + ifnull(input.gl_code, "UNMAPPED") + " | ESG: " + ifnull(input.ESG_Category, "None") + " | Carbon: " + ifnull(input.Estimated_Carbon_KG, 0) + "kg"
         Added_User = zoho.loginuser
     ];
 

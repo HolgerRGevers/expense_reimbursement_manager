@@ -14,6 +14,9 @@
   { "access_table": "GL_Accounts", "access_field": "SARS_Provision",       "zoho_form": "gl_accounts",          "zoho_field": "SARS_Provision",     "transform_notes": null },
   { "access_table": "GL_Accounts", "access_field": "Risk_Level",           "zoho_form": "gl_accounts",          "zoho_field": "Risk_Level",         "transform_notes": null },
   { "access_table": "GL_Accounts", "access_field": "Active",               "zoho_form": "gl_accounts",          "zoho_field": "Active",             "transform_notes": null },
+  { "access_table": "GL_Accounts", "access_field": "ESG_Category",         "zoho_form": "gl_accounts",          "zoho_field": "ESG_Category",       "transform_notes": null },
+  { "access_table": "GL_Accounts", "access_field": "Carbon_Factor",        "zoho_form": "gl_accounts",          "zoho_field": "Carbon_Factor",      "transform_notes": "DOUBLE -> Decimal" },
+  { "access_table": "GL_Accounts", "access_field": "GRI_Indicator",        "zoho_form": "gl_accounts",          "zoho_field": "GRI_Indicator",      "transform_notes": null },
 
   { "access_table": "Approval_Thresholds", "access_field": "Tier_Name",        "zoho_form": "approval_thresholds", "zoho_field": "tier_name",       "transform_notes": null },
   { "access_table": "Approval_Thresholds", "access_field": "Max_Amount_ZAR",   "zoho_form": "approval_thresholds", "zoho_field": "max_amount_zar",  "transform_notes": null },
@@ -46,6 +49,13 @@
   { "access_table": "Expense_Claims", "access_field": "Key_1_Timestamp",      "zoho_form": "expense_claims",    "zoho_field": "Key_1_Timestamp",    "transform_notes": null },
   { "access_table": "Expense_Claims", "access_field": "Key_2_Approver",       "zoho_form": "expense_claims",    "zoho_field": "Key_2_Approver",     "transform_notes": null },
   { "access_table": "Expense_Claims", "access_field": "Key_2_Timestamp",      "zoho_form": "expense_claims",    "zoho_field": "Key_2_Timestamp",    "transform_notes": null },
+  { "access_table": "Expense_Claims", "access_field": "Estimated_Carbon_KG",  "zoho_form": "expense_claims",    "zoho_field": "Estimated_Carbon_KG","transform_notes": "DOUBLE -> Decimal" },
+  { "access_table": "Expense_Claims", "access_field": "ESG_Category",         "zoho_form": "expense_claims",    "zoho_field": "ESG_Category",       "transform_notes": null },
+
+  { "access_table": "Compliance_Config", "access_field": "Config_Key",         "zoho_form": "compliance_config", "zoho_field": "Config_Key",         "transform_notes": null },
+  { "access_table": "Compliance_Config", "access_field": "Config_Value",       "zoho_form": "compliance_config", "zoho_field": "Config_Value",       "transform_notes": null },
+  { "access_table": "Compliance_Config", "access_field": "Description",        "zoho_form": "compliance_config", "zoho_field": "Description",        "transform_notes": null },
+  { "access_table": "Compliance_Config", "access_field": "Active",             "zoho_form": "compliance_config", "zoho_field": "Active",             "transform_notes": "BIT to checkbox" },
 
   { "access_table": "Approval_History", "access_field": "Claim_ID",            "zoho_form": "approval_history",  "zoho_field": "claim",              "transform_notes": "FK -> lookup" },
   { "access_table": "Approval_History", "access_field": "Action_Type",         "zoho_form": "approval_history",  "zoho_field": "action_1",           "transform_notes": "IMPORTANT: Zoho uses action_1" },
