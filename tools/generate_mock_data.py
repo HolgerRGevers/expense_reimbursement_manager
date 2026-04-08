@@ -3,8 +3,9 @@
 Generate mock data for stress-testing the Expense Reimbursement Manager.
 
 Creates CSV files matching the Access/Zoho schema with realistic South African
-expense data across 6 employee personas with different behaviours (normal,
-rookie errors, suspicious patterns, resubmissions, self-approval bypass).
+expense data across 7 employee personas with different behaviours (normal,
+rookie errors, suspicious patterns, resubmissions, self-approval bypass,
+high-value Two-Key dual-approval claims).
 
 Usage:
     python tools/generate_mock_data.py --output-dir exports/csv/
@@ -101,6 +102,16 @@ EMPLOYEES = [
         "categories": ["Communication", "Travel - Local", "Office Supplies"],
         "amount_range": (99, 1500),
         "behavior": "resubmitter",
+    },
+    {
+        "name": "Lindiwe Mahlangu",
+        "email": "lindiwe.mahlangu@company.co.za",
+        "department_id": 1,
+        "client_ids": [1, 4],
+        "role": "Employee",
+        "categories": ["Travel - Long Distance", "Client Entertainment", "Accommodation"],
+        "amount_range": (3000, 9500),
+        "behavior": "high_value",
     },
 ]
 
@@ -273,10 +284,12 @@ def write_thresholds_csv(output_dir: str, data: list[dict]) -> int:
         writer = csv.writer(f)
         writer.writerow([
             "ID", "Tier_Name", "Max_Amount_ZAR", "Approver_Role",
-            "Tier_Order", "Active",
+            "Tier_Order", "Active", "Requires_Dual_Approval",
+            "Dual_Approval_Role", "Dual_Threshold_ZAR",
         ])
         for idx, t in enumerate(data, start=1):
             active = "true" if t["Active"] else "false"
+            dual = "true" if t.get("Requires_Dual_Approval") else "false"
             writer.writerow([
                 idx,
                 t["Tier_Name"],
@@ -284,6 +297,9 @@ def write_thresholds_csv(output_dir: str, data: list[dict]) -> int:
                 t["Approver_Role"],
                 t.get("Tier_Order", 0),
                 active,
+                dual,
+                t.get("Dual_Approval_Role", ""),
+                f"{t['Dual_Threshold_ZAR']:.2f}" if t.get("Dual_Threshold_ZAR") else "",
             ])
     return len(data)
 
@@ -325,6 +341,11 @@ def random_weekend_date(before: date, max_days_back: int = 21) -> date:
     return random.choice(candidates)
 
 
+def ifnull(value: str | None, fallback: str) -> str:
+    """Return fallback if value is None or empty."""
+    return value if value else fallback
+
+
 def fmt_date(d: date) -> str:
     """Format date as ISO 8601 datetime string."""
     return datetime(d.year, d.month, d.day).strftime("%Y-%m-%d %H:%M:%S")
@@ -349,7 +370,7 @@ def generate_claims(
     today: date,
 ) -> tuple[list[dict], int, int]:
     """
-    Generate 150 expense claims across 5 intervals x 6 employees x 5 claims.
+    Generate 175 expense claims across 5 intervals x 7 employees x 5 claims.
 
     Returns (claims_list, valid_count, error_count).
     """
@@ -504,6 +525,27 @@ def generate_claims(
                 elif behavior == "line_manager":
                     vat_type = get_vat_type(amount, behavior)
 
+                elif behavior == "high_value":
+                    # Always above dual threshold (R5,000)
+                    amount = round(random.uniform(5001, 9500), 2)
+                    # One Key 2 dispute scenario
+                    if interval == 2 and claim_num == 0:
+                        status = "Key 2 Dispute"
+                        rejection_reason = "Amount seems excessive for this category"
+                    elif interval == 2 and claim_num == 1:
+                        # Resubmission after HoD agrees with Key 2 rejection
+                        prev = claims[-1]
+                        category = prev["Category"]
+                        amount = round(float(prev["Amount_ZAR"]) * 0.8, 2)
+                        expense_dt = datetime.strptime(
+                            prev["Expense_Date"], "%Y-%m-%d %H:%M:%S"
+                        ).date()
+                        description = prev["Description"] + " (revised amount)"
+                        version = 2
+                        status = "Resubmitted"
+                        rejection_reason = ""
+                    vat_type = get_vat_type(amount, behavior)
+
                 else:
                     # normal
                     vat_type = get_vat_type(amount, behavior)
@@ -538,6 +580,11 @@ def generate_claims(
                     "Retention_Expiry_Date": fmt_date(retention_expiry),
                     "GL_Code_ID": gl_code_id,
                     "Supporting_Documents": receipt_url,
+                    "Requires_Dual_Approval": "true" if (amount > 5000 and status not in ("Rejected", "Resubmitted") and behavior != "rookie") else "false",
+                    "Key_1_Approver": "Head of Department" if (amount > 5000 and status not in ("Rejected", "Resubmitted") and behavior != "rookie") else "",
+                    "Key_1_Timestamp": fmt_datetime(submission_dt + timedelta(days=2)) if (amount > 5000 and status not in ("Rejected", "Resubmitted") and behavior != "rookie") else "",
+                    "Key_2_Approver": "Finance Director" if (amount > 5000 and status == "Submitted" and behavior not in ("rookie", "high_value")) else "",
+                    "Key_2_Timestamp": fmt_datetime(submission_dt + timedelta(days=3)) if (amount > 5000 and status == "Submitted" and behavior not in ("rookie", "high_value")) else "",
                 }
                 claims.append(claim)
 
@@ -552,7 +599,8 @@ def write_claims_csv(output_dir: str, claims: list[dict]) -> int:
         "Department_ID", "Client_ID", "Expense_Date", "Category", "Amount_ZAR",
         "Description", "VAT_Invoice_Type", "POPIA_Consent", "Status",
         "Rejection_Reason", "Version", "Retention_Expiry_Date", "GL_Code_ID",
-        "Supporting_Documents",
+        "Supporting_Documents", "Requires_Dual_Approval",
+        "Key_1_Approver", "Key_1_Timestamp", "Key_2_Approver", "Key_2_Timestamp",
     ]
     path = os.path.join(output_dir, "Expense_Claims.csv")
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -621,6 +669,52 @@ def generate_approval_history(
                     submission_dt + timedelta(days=1)
                 ),
                 "Comments": "Insufficient documentation / wrong category",
+            })
+
+        elif status == "Key 2 Dispute":
+            # Two-Key dispute: Submitted -> LM escalate -> Key 1 approve -> Key 2 reject
+            history_id += 1
+            history.append({
+                "ID": history_id,
+                "Claim_ID": claim_id,
+                "Action_Type": "Submitted",
+                "Actor": employee["name"],
+                "Action_Timestamp": fmt_datetime(submission_dt),
+                "Comments": "Initial submission",
+            })
+            history_id += 1
+            history.append({
+                "ID": history_id,
+                "Claim_ID": claim_id,
+                "Action_Type": "Approved (LM)",
+                "Actor": "Line Manager",
+                "Action_Timestamp": fmt_datetime(
+                    submission_dt + timedelta(days=1)
+                ),
+                "Comments": "Escalated to HoD - amount exceeds R999.99",
+            })
+            history_id += 1
+            history.append({
+                "ID": history_id,
+                "Claim_ID": claim_id,
+                "Action_Type": "Approved (Key 1)",
+                "Actor": "Head of Department",
+                "Action_Timestamp": fmt_datetime(
+                    submission_dt + timedelta(days=2)
+                ),
+                "Comments": "HoD approved as Key 1. Routed to Finance Director.",
+            })
+            history_id += 1
+            history.append({
+                "ID": history_id,
+                "Claim_ID": claim_id,
+                "Action_Type": "Rejected (Key 2)",
+                "Actor": "Finance Director",
+                "Action_Timestamp": fmt_datetime(
+                    submission_dt + timedelta(days=3)
+                ),
+                "Comments": "Key 2 disputes Key 1 approval. Reason: "
+                + ifnull(claim.get("Rejection_Reason"), "Amount seems excessive"),
             })
 
         elif status == "Resubmitted":
@@ -730,17 +824,46 @@ def generate_approval_history(
                     ),
                     "Comments": "Escalated to HoD - amount exceeds R999.99",
                 })
-                history_id += 1
-                history.append({
-                    "ID": history_id,
-                    "Claim_ID": claim_id,
-                    "Action_Type": "Approved (HoD)",
-                    "Actor": "Head of Department",
-                    "Action_Timestamp": fmt_datetime(
-                        submission_dt + timedelta(days=2)
-                    ),
-                    "Comments": "Final approval",
-                })
+
+                if amount > 5000:
+                    # Two-Key flow: HoD = Key 1, Finance Director = Key 2
+                    history_id += 1
+                    history.append({
+                        "ID": history_id,
+                        "Claim_ID": claim_id,
+                        "Action_Type": "Approved (Key 1)",
+                        "Actor": "Head of Department",
+                        "Action_Timestamp": fmt_datetime(
+                            submission_dt + timedelta(days=2)
+                        ),
+                        "Comments": "HoD approved as Key 1. Amount R"
+                        + fmt_amount(amount)
+                        + " exceeds dual threshold. Routed to Key 2.",
+                    })
+                    history_id += 1
+                    history.append({
+                        "ID": history_id,
+                        "Claim_ID": claim_id,
+                        "Action_Type": "Approved (Key 2)",
+                        "Actor": "Finance Director",
+                        "Action_Timestamp": fmt_datetime(
+                            submission_dt + timedelta(days=3)
+                        ),
+                        "Comments": "Finance Director final approval (Key 2). "
+                        "Two-Key authorization complete.",
+                    })
+                else:
+                    history_id += 1
+                    history.append({
+                        "ID": history_id,
+                        "Claim_ID": claim_id,
+                        "Action_Type": "Approved (HoD)",
+                        "Actor": "Head of Department",
+                        "Action_Timestamp": fmt_datetime(
+                            submission_dt + timedelta(days=2)
+                        ),
+                        "Comments": "Final approval",
+                    })
 
             # Track candidates for SLA breach (interval 0, normal employees)
             if behavior in ("normal",):
