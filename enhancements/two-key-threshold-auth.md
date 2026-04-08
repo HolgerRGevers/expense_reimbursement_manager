@@ -1,5 +1,9 @@
 # Two-Key Threshold Authorization System
 
+## Status: Fully Implemented (v0.5.0)
+
+All scripts, schema changes, seed data, mock data, and `.ds` deployment tooling are complete. The system is live in the approval pipeline.
+
 ## Overview
 
 The Two-Key system requires two independent approvers for expense claims exceeding a configurable monetary threshold (default R5,000). No single individual can unilaterally authorize high-value expenditure. This strengthens King IV Principle 7 (Delegation of Authority), COSO segregation of duties controls, and ISO 37001 anti-bribery safeguards.
@@ -134,6 +138,8 @@ This "rejection requires review" pattern ensures neither key can unilaterally fi
 | `Requires_Dual_Approval` | Checkbox | Set by HoD approval script when claim exceeds dual threshold |
 | `Key_1_Approver` | Text | Stores `zoho.loginuser` of Key 1 for same-person prevention |
 | `Key_1_Timestamp` | DateTime | When Key 1 approved. Used for Key 2 SLA enforcement |
+| `Key_2_Approver` | Text | Stores `zoho.loginuser` of Key 2 on final approval |
+| `Key_2_Timestamp` | DateTime | When Key 2 approved. Completes the dual-approval audit trail |
 
 ### Approval_Thresholds (Tier 3 record)
 
@@ -164,11 +170,15 @@ When an employee resubmits after any rejection (including Key 2 disputes):
 - The claim re-enters the full approval pipeline from the beginning
 - If the amount still exceeds the dual threshold, Two-Key activates again
 
+## ESG Integration (v0.7.0)
+
+As of v0.7.0, the HoD approval script populates ESG fields (`ESG_Category`, `Estimated_Carbon_KG`) alongside GL code during both the "Pending Second Key" and "Approved" paths. This means ESG metadata is available regardless of whether the claim triggers Two-Key or not. See `docs/compliance/esg-reporting-guide.md`.
+
 ## Scripts
 
 | Script | Change | Purpose |
 |--------|--------|---------|
-| `hod_approval.on_approve.dg` | Modified | Dual threshold check + Key 2 Dispute reconsideration |
+| `hod_approval.on_approve.dg` | Modified | Dual threshold check + Key 2 Dispute reconsideration + ESG population |
 | `finance_approval.on_approve.dg` | New | Key 2 approval with same-person prevention |
 | `finance_approval.on_reject.dg` | New | Key 2 rejection → Key 2 Dispute (not Rejected) |
 | `sla_enforcement_daily.dg` | Modified | Added Key 2 SLA loop |
@@ -186,3 +196,13 @@ When an employee resubmits after any rejection (including Key 2 disputes):
 | No Tier 3 config exists | Feature is opt-in — HoD remains final approver |
 | Resubmission after dispute | Dual fields cleared, full pipeline restart |
 | SLA breach on Key 2 | 2-day reminder, 3-day escalation to CEO |
+
+## Deployment
+
+The Two-Key schema is deployed programmatically via:
+
+```bash
+python tools/ds_editor.py apply-two-key exports/FILE.ds
+```
+
+This applies 6 modifications: expense_claims fields, approval_thresholds fields, status picklist, action_1 picklist, Level 3 approval block with Finance Director scripts, and Finance Director role. The command is idempotent -- running it again skips already-applied changes.
