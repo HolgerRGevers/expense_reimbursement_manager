@@ -3,13 +3,19 @@
 // Location: Expense_Claim form > Workflow > On Edit
 // Trigger:  Record edit/save
 // Purpose:  Resubmission handler - version increment, status reset, self-approval check on resubmit
-// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Version:  v3.0 (Two-Key Threshold Authorization)
 // Note:     Uses thisapp.permissions.isUserInRole() - zoho.loginuserrole does NOT exist
 // ============================================================
 
 if (input.status == "Resubmitted")
 {
     input.Version = input.Version + 1;
+
+    // Clear dual-approval tracking on resubmission
+    input.Requires_Dual_Approval = false;
+    input.Key_1_Approver = "";
+    input.Key_1_Timestamp = null;
+
     input.Submission_Date = zoho.currenttime;
 
     row = insert into approval_history

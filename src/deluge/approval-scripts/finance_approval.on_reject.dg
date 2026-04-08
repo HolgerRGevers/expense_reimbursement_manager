@@ -1,0 +1,42 @@
+// ============================================================
+// Script:   finance_approval.on_reject.dg
+// Location: Approval Process > Line Manager Approval > Level 3 > On Reject
+// Trigger:  Approver clicks Reject
+// Purpose:  Two-Key rejection: dispute pattern. Routes back to HoD for reconsideration, not direct rejection.
+// Version:  v3.0 (Two-Key Threshold Authorization)
+// ============================================================
+
+// Key 2 rejection does NOT set status to "Rejected" directly.
+// Instead, it creates a dispute for HoD to reconsider.
+input.status = "Key 2 Dispute";
+
+rejectReason = ifnull(input.Rejection_Reason, "No reason provided");
+key1Name = ifnull(input.Key_1_Approver, "UNKNOWN");
+
+row = insert into approval_history
+[
+    claim = input.ID
+    action_1 = "Rejected (Key 2)"
+    actor = zoho.loginuser
+    timestamp = zoho.currenttime
+    comments = "Finance Director (Key 2) disputes Key 1 approval by " + key1Name + ". Reason: " + rejectReason
+    Added_User = zoho.loginuser
+];
+
+// Notify HoD that their approval is disputed
+sendmail
+[
+    from : zoho.adminuserid
+    to : "hod.demo@yourdomain.com"
+    subject : "Expense Claim " + input.claim_id + " - Key 2 Dispute"
+    message : "The Finance Director has disputed your Key 1 approval for claim " + input.claim_id + " (R" + input.amount_zar + ").\nReason: " + rejectReason + "\nPlease review and either re-approve (override) or reject the claim."
+];
+
+// Notify employee that claim is under review
+sendmail
+[
+    from : zoho.adminuserid
+    to : input.Email
+    subject : "Expense Claim " + input.claim_id + " - Under Review"
+    message : "Your claim for R" + input.amount_zar + " is under additional review by management. You will be notified of the outcome."
+];

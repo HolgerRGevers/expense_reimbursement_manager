@@ -1,0 +1,58 @@
+// ============================================================
+// Script:   finance_approval.on_approve.dg
+// Location: Approval Process > Line Manager Approval > Level 3 > On Approve
+// Trigger:  Approver clicks Approve
+// Purpose:  Two-Key second approval (Key 2). Validates independence, sets final approval.
+// Version:  v3.0 (Two-Key Threshold Authorization)
+// ============================================================
+
+// --- Same-person prevention (segregation of duties) ---
+key1 = ifnull(input.Key_1_Approver, "");
+current = zoho.loginuser;
+
+if (key1 == current && key1 != "")
+{
+    // Block: same person cannot be both Key 1 and Key 2
+    input.status = "Pending Second Key";
+
+    row = insert into approval_history
+    [
+        claim = input.ID
+        action_1 = "Warning"
+        actor = zoho.loginuser
+        timestamp = zoho.currenttime
+        comments = "Key 2 approval blocked: same person (" + current + ") cannot serve as both Key 1 and Key 2. Claim remains pending."
+        Added_User = zoho.loginuser
+    ];
+
+    sendmail
+    [
+        from : zoho.adminuserid
+        to : zoho.adminuserid
+        subject : "GOVERNANCE ALERT - Claim " + input.claim_id + " - Same-Person Key 2 Blocked"
+        message : "User " + current + " attempted to act as both Key 1 and Key 2 on claim " + input.claim_id + " (R" + input.amount_zar + "). Approval blocked. A different Key 2 approver is required."
+    ];
+
+    return;
+}
+
+// --- Key 2 final approval ---
+input.status = "Approved";
+
+row = insert into approval_history
+[
+    claim = input.ID
+    action_1 = "Approved (Key 2)"
+    actor = zoho.loginuser
+    timestamp = zoho.currenttime
+    comments = "Finance Director approved (Key 2). Key 1: " + ifnull(input.Key_1_Approver, "UNKNOWN") + ". Key 2: " + current + ". Dual-approval complete."
+    Added_User = zoho.loginuser
+];
+
+sendmail
+[
+    from : zoho.adminuserid
+    to : input.Email
+    subject : "Expense Claim " + input.claim_id + " - Final Approval (Dual Key)"
+    message : "Your claim for R" + input.amount_zar + " has received final approval under dual-key authorization.\nKey 1 (HoD): " + ifnull(input.Key_1_Approver, "UNKNOWN") + "\nKey 2 (Finance Director): " + current
+];
