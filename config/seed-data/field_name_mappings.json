@@ -44,6 +44,8 @@
   { "access_table": "Expense_Claims", "access_field": "Requires_Dual_Approval","zoho_form": "expense_claims",    "zoho_field": "Requires_Dual_Approval","transform_notes": "Two-Key flag" },
   { "access_table": "Expense_Claims", "access_field": "Key_1_Approver",       "zoho_form": "expense_claims",    "zoho_field": "Key_1_Approver",     "transform_notes": null },
   { "access_table": "Expense_Claims", "access_field": "Key_1_Timestamp",      "zoho_form": "expense_claims",    "zoho_field": "Key_1_Timestamp",    "transform_notes": null },
+  { "access_table": "Expense_Claims", "access_field": "Key_2_Approver",       "zoho_form": "expense_claims",    "zoho_field": "Key_2_Approver",     "transform_notes": null },
+  { "access_table": "Expense_Claims", "access_field": "Key_2_Timestamp",      "zoho_form": "expense_claims",    "zoho_field": "Key_2_Timestamp",    "transform_notes": null },
 
   { "access_table": "Approval_History", "access_field": "Claim_ID",            "zoho_form": "approval_history",  "zoho_field": "claim",              "transform_notes": "FK -> lookup" },
   { "access_table": "Approval_History", "access_field": "Action_Type",         "zoho_form": "approval_history",  "zoho_field": "action_1",           "transform_notes": "IMPORTANT: Zoho uses action_1" },

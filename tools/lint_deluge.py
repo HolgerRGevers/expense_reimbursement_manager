@@ -40,6 +40,7 @@ EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
 DEMO_EMAIL_DOMAINS = {"yourdomain.com", "example.com", "placeholder.com"}
 THRESHOLD_FALLBACK = "999.99"
+DUAL_THRESHOLD_FALLBACK = "5000.00"
 
 
 # ============================================================
@@ -610,8 +611,9 @@ def check_dg012(db: DelugeDB, filename: str, block: Block) -> list[Diagnostic]:
 
 
 def check_dg014(filename: str, lines: list[str]) -> list[Diagnostic]:
-    """DG014: Threshold fallback not 999.99."""
+    """DG014: Threshold fallback not 999.99 (or 5000.00 for dual thresholds)."""
     diags: list[Diagnostic] = []
+    valid_thresholds = {float(THRESHOLD_FALLBACK), float(DUAL_THRESHOLD_FALLBACK)}
     for i, raw_line in enumerate(lines):
         lineno = i + 1
         if is_comment_line(raw_line):
@@ -625,11 +627,11 @@ def check_dg014(filename: str, lines: list[str]) -> list[Diagnostic]:
         if match:
             val = match.group(1)
             try:
-                if float(val) != float(THRESHOLD_FALLBACK):
+                if float(val) not in valid_thresholds:
                     diags.append(Diagnostic(
                         filename, lineno, Severity.WARN, "DG014",
                         f"Threshold fallback value is {val}, "
-                        f"expected {THRESHOLD_FALLBACK} (matching seed data).",
+                        f"expected {THRESHOLD_FALLBACK} (tier 1) or {DUAL_THRESHOLD_FALLBACK} (dual).",
                     ))
             except ValueError:
                 pass
@@ -642,11 +644,11 @@ def check_dg014(filename: str, lines: list[str]) -> list[Diagnostic]:
             if ifnull_match:
                 val = ifnull_match.group(1)
                 try:
-                    if float(val) != float(THRESHOLD_FALLBACK):
+                    if float(val) not in valid_thresholds:
                         diags.append(Diagnostic(
                             filename, lineno, Severity.WARN, "DG014",
                             f"Threshold ifnull fallback is {val}, "
-                            f"expected {THRESHOLD_FALLBACK} (matching seed data).",
+                            f"expected {THRESHOLD_FALLBACK} (tier 1) or {DUAL_THRESHOLD_FALLBACK} (dual).",
                         ))
                 except ValueError:
                     pass

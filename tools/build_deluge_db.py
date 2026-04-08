@@ -365,6 +365,8 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("expense_claims", "Requires_Dual_Approval", "Requires Dual Approval", "checkbox", "Two-Key flag, set by HoD approval"),
         ("expense_claims", "Key_1_Approver", "Key 1 Approver", "text", "Stores Key 1 approver username"),
         ("expense_claims", "Key_1_Timestamp", "Key 1 Timestamp", "datetime", "When Key 1 approved"),
+        ("expense_claims", "Key_2_Approver", "Key 2 Approver", "text", "Stores Key 2 approver username"),
+        ("expense_claims", "Key_2_Timestamp", "Key 2 Timestamp", "datetime", "When Key 2 approved"),
     ]
     # Approval History
     ah_fields = [

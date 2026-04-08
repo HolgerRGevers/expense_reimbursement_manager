@@ -68,6 +68,11 @@ Verified field link name mapping extracted from the `.ds` export. These are the 
 | Version | Version | number | default: 1 |
 | Parent_Claim_ID | Parent Claim ID | picklist | private/hidden |
 | gl_code | Add New | list |  |
+| Requires_Dual_Approval | Requires Dual Approval | checkbox | Two-Key flag |
+| Key_1_Approver | Key 1 Approver | text | Stores Key 1 approver username |
+| Key_1_Timestamp | Key 1 Timestamp | datetime | When Key 1 approved |
+| Key_2_Approver | Key 2 Approver | text | Stores Key 2 approver username |
+| Key_2_Timestamp | Key 2 Timestamp | datetime | When Key 2 approved |
 
 ## GL Accounts (`gl_accounts`)
 

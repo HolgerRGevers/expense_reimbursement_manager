@@ -15,6 +15,8 @@ if (input.status == "Resubmitted")
     input.Requires_Dual_Approval = false;
     input.Key_1_Approver = "";
     input.Key_1_Timestamp = null;
+    input.Key_2_Approver = "";
+    input.Key_2_Timestamp = null;
 
     input.Submission_Date = zoho.currenttime;
 

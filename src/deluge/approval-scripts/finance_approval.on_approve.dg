@@ -38,6 +38,8 @@ if (key1 == current && key1 != "")
 
 // --- Key 2 final approval ---
 input.status = "Approved";
+input.Key_2_Approver = zoho.loginuser;
+input.Key_2_Timestamp = zoho.currenttime;
 
 row = insert into approval_history
 [

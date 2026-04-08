@@ -47,6 +47,8 @@
   { "table_name": "Expense_Claims",      "field_name": "Requires_Dual_Approval","access_type": "BIT",           "zoho_form": "expense_claims",       "zoho_field": "Requires_Dual_Approval","notes": "Two-Key flag, set by HoD approval" },
   { "table_name": "Expense_Claims",      "field_name": "Key_1_Approver",       "access_type": "TEXT(200)",     "zoho_form": "expense_claims",       "zoho_field": "Key_1_Approver",        "notes": "Stores Key 1 username for same-person prevention" },
   { "table_name": "Expense_Claims",      "field_name": "Key_1_Timestamp",      "access_type": "DATETIME",     "zoho_form": "expense_claims",       "zoho_field": "Key_1_Timestamp",       "notes": "When Key 1 approved, used for Key 2 SLA" },
+  { "table_name": "Expense_Claims",      "field_name": "Key_2_Approver",       "access_type": "TEXT(200)",     "zoho_form": "expense_claims",       "zoho_field": "Key_2_Approver",        "notes": "Stores Key 2 username" },
+  { "table_name": "Expense_Claims",      "field_name": "Key_2_Timestamp",      "access_type": "DATETIME",     "zoho_form": "expense_claims",       "zoho_field": "Key_2_Timestamp",       "notes": "When Key 2 approved" },
 
   { "table_name": "Approval_History",    "field_name": "ID",                   "access_type": "AUTOINCREMENT", "zoho_form": "approval_history",     "zoho_field": null,                    "notes": "PK" },
   { "table_name": "Approval_History",    "field_name": "Claim_ID",             "access_type": "LONG",          "zoho_form": "approval_history",     "zoho_field": "claim",                 "notes": "FK -> Expense_Claims.ID" },
