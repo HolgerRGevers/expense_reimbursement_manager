@@ -10,6 +10,7 @@ Subcommands:
     remove-reports       Remove named reports and all their references
     restrict-menus       Strip Edit/Duplicate/Delete from report menus
     rebuild-dashboard    Replace a page's ZML content with native components
+    apply-two-key        Deploy Two-Key Threshold Authorization schema changes
     audit                Show current state: descriptions, reports, menu permissions
 
 Usage:
@@ -17,6 +18,7 @@ Usage:
     python tools/ds_editor.py remove-reports exports/FILE.ds --reports name1,name2
     python tools/ds_editor.py restrict-menus exports/FILE.ds --reports name1,name2
     python tools/ds_editor.py rebuild-dashboard exports/FILE.ds --page Employee_Dashboard
+    python tools/ds_editor.py apply-two-key exports/FILE.ds
     python tools/ds_editor.py audit exports/FILE.ds
 """
 
