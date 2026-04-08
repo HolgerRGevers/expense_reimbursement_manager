@@ -9,10 +9,10 @@ integrity, and picklist values. Uses the same Diagnostic format as the linters.
 Platform: Cross-platform (stdlib only)
 
 Usage:
-    python tools/validate_access_data.py exports/csv/
-    python tools/validate_access_data.py exports/csv/ --check-picklists
-    python tools/validate_access_data.py exports/csv/ --check-refs
-    python tools/validate_access_data.py exports/csv/ --check-picklists --check-refs
+    python tools/validate_import_data.py exports/csv/
+    python tools/validate_import_data.py exports/csv/ --check-picklists
+    python tools/validate_import_data.py exports/csv/ --check-refs
+    python tools/validate_import_data.py exports/csv/ --check-picklists --check-refs
 """
 
 from __future__ import annotations

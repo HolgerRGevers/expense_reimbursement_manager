@@ -140,7 +140,7 @@ block-beta
         columns 2
         linters["Linters (3)\nlint_deluge · 20 rules\nlint_access · 8 rules\nlint_hybrid · 13 rules"]
         databases["Language DBs (2)\ndeluge_lang · 368 rows\naccess_vba_lang · 505 rows"]
-        pipeline["Import Pipeline (4)\nexport_access_csv\nvalidate_access_data\nupload_to_creator\ngenerate_mock_data"]
+        pipeline["Import Pipeline (4)\nexport_access_csv\nvalidate_import_data\nupload_to_creator\ngenerate_mock_data"]
         devtools["Dev Tools (4)\nparse_ds_export\nscaffold_deluge\nds_editor\nbuild_access_db"]
     end
 
@@ -174,7 +174,7 @@ expense_reimbursement_manager/
 |   |-- build_deluge_db.py             # SQLite DB: 11 tables, 368 rows (Deluge language)
 |   |-- build_access_vba_db.py         # SQLite DB: 12 tables, 505 rows (Access/VBA language)
 |   |-- export_access_csv.py           # Access .accdb -> CSV export (Windows)
-|   |-- validate_access_data.py        # Pre-flight CSV validator for Zoho constraints
+|   |-- validate_import_data.py         # Pre-flight CSV/JSON validator for any import data
 |   |-- upload_to_creator.py           # REST API v2.1 uploader (mock mode default)
 |   |-- generate_mock_data.py          # 6-persona synthetic data generator (150 claims)
 |   |-- parse_ds_export.py             # .ds parser: forms, fields, embedded scripts
@@ -301,16 +301,17 @@ python tools/build_deluge_db.py --force   # rebuild from scratch
 
 ### .ds Editor (`tools/ds_editor.py`)
 
-Programmatic modifications to .ds export files with 4 subcommands.
+Programmatic modifications to .ds export files with 5 subcommands.
 
 ```bash
-python tools/ds_editor.py audit exports/*.ds              # check state
-python tools/ds_editor.py add-descriptions exports/*.ds    # from YAML config
-python tools/ds_editor.py remove-reports exports/*.ds --reports name1,name2  # 5-point cleanup
+python tools/ds_editor.py audit exports/*.ds                                    # check state
+python tools/ds_editor.py add-descriptions exports/*.ds                          # from YAML config
+python tools/ds_editor.py remove-reports exports/*.ds --reports name1,name2       # 5-point cleanup
 python tools/ds_editor.py restrict-menus exports/*.ds --reports name1,name2
+python tools/ds_editor.py rebuild-dashboard exports/*.ds --page Employee_Dashboard # native components
 ```
 
-Report removal handles the full dependency chain: definition, permissions, quickview/detailview, navigation menu, and ZML content warnings.
+Report removal handles the full dependency chain. Dashboard rebuild replaces dspZml/CDATA blocks with native responsive components (text, chart, report).
 
 ### Access SQL Linter (`tools/lint_access.py`)
 
@@ -378,7 +379,7 @@ Four confirmed pathways for importing Access data into an existing Zoho Creator 
 python tools/export_access_csv.py exports/ERM.accdb --output-dir exports/csv/
 
 # 2. Validate data against Zoho constraints
-python tools/validate_access_data.py exports/csv/ --check-picklists --check-refs
+python tools/validate_import_data.py exports/csv/ --check-picklists --check-refs
 
 # 3. Cross-environment validation
 python tools/lint_hybrid.py --data exports/csv/ --scripts src/deluge/
@@ -536,7 +537,7 @@ Every transition logged in Approval_History with actor, timestamp, and comments.
 
 ```bash
 python tools/generate_mock_data.py --output-dir exports/csv/         # generate
-python tools/validate_access_data.py exports/csv/ --check-picklists  # validate
+python tools/validate_import_data.py exports/csv/ --check-picklists  # validate
 ```
 
 Data includes realistic SA vendors (Uber, FlySafair, Nando's, Takealot, City Lodge, Vodacom), SLA breach escalation records with SYSTEM actor, and receipt placeholder URLs. Deterministic output via `--seed` flag.
@@ -603,7 +604,7 @@ python tools/lint_hybrid.py --verbose
 
 # Generate mock data and validate
 python tools/generate_mock_data.py --output-dir exports/csv/
-python tools/validate_access_data.py exports/csv/ --check-picklists --check-refs
+python tools/validate_import_data.py exports/csv/ --check-picklists --check-refs
 ```
 
 ### Deploying to Creator
@@ -655,7 +656,7 @@ JSON files in `config/seed-data/` serve as the source of truth:
 | Commits | 42+ |
 | Total files | 73 |
 | Deluge scripts (production) | 11 (457 LOC) |
-| Python tools | 13 (6,945 LOC) |
+| Python tools | 13 (7,113 LOC) |
 | Linter rules | 41 (20 Deluge + 8 Access + 13 Hybrid) |
 | SQLite tables | 23 (873 rows across 2 databases) |
 | Governance gaps resolved | 15 of 16 |

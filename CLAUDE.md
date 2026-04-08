@@ -95,7 +95,7 @@ python tools/export_access_csv.py exports/ERM.accdb --output-dir exports/csv/
 ```
 2. Validate data before upload:
 ```
-python tools/validate_access_data.py exports/csv/ --check-picklists --check-refs
+python tools/validate_import_data.py exports/csv/ --check-picklists --check-refs
 ```
 3. Upload to Zoho Creator (mock mode by default):
 ```

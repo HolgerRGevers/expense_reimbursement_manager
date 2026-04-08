@@ -3,7 +3,7 @@
 Build the Access/VBA language SQLite database.
 
 Populates tools/access_vba_lang.db with Access SQL and VBA syntax data
-for use by lint_access.py, lint_hybrid.py, and validate_access_data.py.
+for use by lint_access.py, lint_hybrid.py, and validate_import_data.py.
 
 Usage:
     python tools/build_access_vba_db.py          # creates tools/access_vba_lang.db

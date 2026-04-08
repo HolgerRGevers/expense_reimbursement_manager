@@ -6,15 +6,17 @@ Programmatic modifications to .ds export files for deployment via import.
 Reads configuration from config/ YAML files and applies changes to the .ds.
 
 Subcommands:
-    add-descriptions   Add field help text from config/field-descriptions.yaml
-    remove-reports     Remove named reports and all their references
-    restrict-menus     Strip Edit/Duplicate/Delete from report menus
-    audit              Show current state: descriptions, reports, menu permissions
+    add-descriptions     Add field help text from config/field-descriptions.yaml
+    remove-reports       Remove named reports and all their references
+    restrict-menus       Strip Edit/Duplicate/Delete from report menus
+    rebuild-dashboard    Replace a page's ZML content with native components
+    audit                Show current state: descriptions, reports, menu permissions
 
 Usage:
     python tools/ds_editor.py add-descriptions exports/FILE.ds
     python tools/ds_editor.py remove-reports exports/FILE.ds --reports name1,name2
     python tools/ds_editor.py restrict-menus exports/FILE.ds --reports name1,name2
+    python tools/ds_editor.py rebuild-dashboard exports/FILE.ds --page Employee_Dashboard
     python tools/ds_editor.py audit exports/FILE.ds
 """
 
@@ -355,6 +357,153 @@ def restrict_menus(ds_path: Path, report_names: list[str]) -> int:
 
 
 # ============================================================
+# Rebuild dashboard
+# ============================================================
+
+# Registry of dashboard builders keyed by page name.
+# Each builder returns a ZML string with native components.
+DASHBOARD_BUILDERS: dict[str, callable] = {}
+
+
+def _build_kpi_tile(bg: str, icon_bg: str, icon: str, value: str,
+                    label: str, label_color: str, criteria: str = "") -> str:
+    """Build a single KPI tile using native panel/text/image components."""
+    crit = f"\n\tcriteria = '{criteria}'" if criteria else ""
+    return (
+        f"<pc\n\tpadding = '20px'\n\tbgColor = '{bg}'\n\twidth = '25%'\n"
+        f"\thAlign = 'left'\n\tvAlign = 'middle'\n>\n"
+        f"<pr width='auto' height='auto'>\n<pc>\n"
+        f"<image\n\tcolor = '#FFFFFF'\n\tbgColor = '{icon_bg}'\n"
+        f"\twidth = '48px'\n\theight = '48px'\n\ttype = 'icon'\n"
+        f"\tvalue = '{icon}'\n\tsize = '20px'\n\tcornerRadius = '10px'\n"
+        f"\ticonType = 'outline'\n/>\n</pc>\n<pc hAlign='left'>\n"
+        f"<pr><pc>\n<text\n\tmarginLeft = '16px'\n\tcolor = '#FFFFFF'\n"
+        f"\tsize = '22px'\n\tbold = 'true'\n\ttype = 'Form Data'\n"
+        f"\tdisplayType = 'actual'\n\tthousandsSeperator = 'LOCALE'\n"
+        f"\tdecimalSeperator = 'DOT'\n\tnumberScale = 'none'\n"
+        f"\tvalue = '{value}'{crit}\n/>\n</pc></pr>\n<pr><pc>\n"
+        f"<text\n\tmarginLeft = '16px'\n\tmarginTop = '3px'\n"
+        f"\tcolor = '{label_color}'\n\tsize = '13px'\n\ttype = 'Text'\n"
+        f"\tvalue = '{label}'\n/>\n</pc></pr>\n</pc>\n</pr>\n</pc>\n"
+    )
+
+
+def build_employee_dashboard() -> str:
+    """Build Employee Dashboard ZML with native responsive components."""
+    header = (
+        "<row>\n\t<column width='100%'>\n"
+        "\t<panel elementName='Header_Banner'\n\t\tbgColor = '#5A3D9B'\n>\n"
+        "<pr width='fill' height='fill'>\n"
+        "<pc\n\tpadding = '24px'\n\twidth = '75%'\n\thAlign = 'left'\n\tvAlign = 'middle'\n>\n"
+        "<pr><pc>\n<text\n\tcolor = '#FFFFFF'\n\tsize = '26px'\n\tbold = 'true'\n"
+        "\ttype = 'Text'\n\tvalue = 'My Expense Dashboard'\n/>\n</pc></pr>\n"
+        "<pr><pc>\n<text\n\tmarginTop = '5px'\n\tcolor = '#E0D4F5'\n\tsize = '14px'\n"
+        "\ttype = 'Text'\n\tvalue = 'Submit, track and manage your expense claims'\n/>\n"
+        "</pc></pr>\n</pc>\n"
+        "<pc\n\tpadding = '15px'\n\tbgColor = '#0F6E56'\n\thAlign = 'center'\n"
+        "\tvAlign = 'middle'\n\tcornerRadius = '8px'\n>\n<pr><pc hAlign='center'>\n"
+        "<text\n\taction = 'OpenForm'\n\tcomponentLinkName = 'expense_claims'\n"
+        "\ttarget = 'same-window'\n\tcolor = '#FFFFFF'\n\tsize = '15px'\n"
+        "\tbold = 'true'\n\ttype = 'Text'\n\tvalue = 'Submit New Claim'\n/>\n"
+        "</pc></pr>\n</pc>\n</pr>\n</panel>\n\t</column>\n</row>"
+    )
+
+    kpis = (
+        "<row>\n\t<column width='100%'>\n"
+        "\t<panel elementName='KPI_Tiles'\n\t\ttitle = 'Key Metrics'\n\t\ttitleSize = '15px'\n>\n"
+        "<pr width='fill' height='fill'>\n<pc\n\tpaddingTop = '10px'\n"
+        "\tbgColor = '#FFFFFF'\n\twidth = '100%'\n>\n<pr width='fill' height='fill'>\n"
+        + _build_kpi_tile("#0F6E56", "#1ABE75", "business-percentage-39",
+                          "thisapp.expense_claims.amount_zar.sum",
+                          "Approved (ZAR)", "#E1F5EE",
+                          'status == &quot;Approved&quot;')
+        + _build_kpi_tile("#3C3489", "#734AD0", "education-paper",
+                          "thisapp.expense_claims.ID.count",
+                          "Total Claims", "#CECBF6")
+        + _build_kpi_tile("#854F0B", "#F6BC2B", "design-todo",
+                          "thisapp.expense_claims.ID.count",
+                          "Pending Approval", "#FAEEDA",
+                          'status == &quot;Pending LM Approval&quot; || status == &quot;Pending HoD Approval&quot;')
+        + _build_kpi_tile("#8B2020", "#E2335C", "arrows-circle-remove",
+                          "thisapp.expense_claims.ID.count",
+                          "Rejected", "#F5D5D5",
+                          'status == &quot;Rejected&quot;')
+        + "</pr>\n</pc>\n</pr>\n</panel>\n\t</column>\n</row>"
+    )
+
+    charts = (
+        "<row>\n"
+        "\t<column width='50%'>\n\t<chart \n\telementName='Status_Chart'\n"
+        "\t\ttype = 'Pie'\n\t\ttitle = 'Claims by Status'\n\t\ttitleSize = '15px'\n"
+        "\t\txfield = 'status'\n\t\tyfield = 'count:status'\n"
+        "\t\tappLinkName = 'thisapp'\n\t\tformLinkName = 'expense_claims'\n"
+        "\t\tlegendPos = 'bottom'\n\t\theightType = 'custom'\n\t\theightValue = '350'\n"
+        "/>\n\t</column>\n"
+        "\t<column width='50%'>\n\t<chart \n\telementName='Category_Chart'\n"
+        "\t\ttype = 'Bar'\n\t\ttitle = 'Spend by Category (ZAR)'\n\t\ttitleSize = '15px'\n"
+        "\t\txfield = 'category'\n\t\tyfield = 'sum:amount_zar'\n"
+        "\t\tappLinkName = 'thisapp'\n\t\tformLinkName = 'expense_claims'\n"
+        "\t\tlegendPos = 'none'\n\t\theightType = 'custom'\n\t\theightValue = '350'\n"
+        "/>\n\t</column>\n</row>"
+    )
+
+    report = (
+        "<row>\n\t<column width='100%'>\n\t<report \n"
+        "\telementName='My_Claims_Report'\n\t\tappLinkName = 'thisapp'\n"
+        "\t\tlinkName = 'expense_claims_Report'\n\t\tiszreport = 'false'\n"
+        "\t\tzc_AddRec = 'false'\n\t\tzc_EditRec = 'false'\n"
+        "\t\tzc_Print = 'false'\n\t\tzc_DelRec = 'false'\n"
+        "\t\tzc_DuplRec = 'false'\n\t\tzc_EditBulkRec = 'false'\n"
+        "\t\tzc_BulkDelete = 'false'\n\t\tzc_BulkDuplicate = 'false'\n"
+        "\t\tzc_Export = 'false'\n\theightType = 'auto'\n\theightValue = '600'\n"
+        "/>\n\t</column>\n</row>"
+    )
+
+    cfg = '{"layout":{"displayType":"card","design":"fluid","style":"padding:0px;"}}'
+    return (
+        f"<zml webDeviceConfig='{cfg}'>\n\t<layout>\n"
+        f"{header}\n{kpis}\n{charts}\n{report}\n\t</layout>\n</zml>"
+    )
+
+
+DASHBOARD_BUILDERS["Employee_Dashboard"] = build_employee_dashboard
+
+
+def replace_page_content(ds_path: Path, page_name: str, new_zml: str) -> None:
+    """Replace the Content attribute of a named page in a .ds file."""
+    with open(ds_path, encoding="utf-8") as f:
+        content = f.read()
+
+    marker = f"page {page_name}"
+    start = content.find(marker)
+    if start == -1:
+        print(f"ERROR: Page '{page_name}' not found in {ds_path}", file=sys.stderr)
+        sys.exit(1)
+
+    attr_start = content.find('Content="', start)
+    if attr_start == -1 or attr_start > start + 5000:
+        print(f"ERROR: No Content attribute found for page '{page_name}'", file=sys.stderr)
+        sys.exit(1)
+
+    value_start = attr_start + len('Content="')
+    end_marker = '</zml>"'
+    end = content.find(end_marker, value_start)
+    if end == -1:
+        print(f'ERROR: No closing </zml>" found for page {page_name}', file=sys.stderr)
+        sys.exit(1)
+
+    value_end = end + len("</zml>")
+    escaped = new_zml.replace("\n", "\\n").replace("\t", "\\t")
+    result = content[:value_start] + escaped + content[value_end:]
+
+    with open(ds_path, "w", encoding="utf-8") as f:
+        f.write(result)
+
+    old_len = value_end - value_start
+    print(f"Replaced {page_name} Content ({old_len} -> {len(escaped)} chars)")
+
+
+# ============================================================
 # Audit
 # ============================================================
 
@@ -419,6 +568,13 @@ def main() -> None:
     p_menu.add_argument("ds_file", help="Path to .ds file")
     p_menu.add_argument("--reports", required=True, help="Comma-separated report names to restrict")
 
+    # rebuild-dashboard
+    p_dash = sub.add_parser("rebuild-dashboard", help="Replace page ZML with native components")
+    p_dash.add_argument("ds_file", help="Path to .ds file")
+    p_dash.add_argument("--page", required=True,
+                        help=f"Page name to rebuild. Available: {', '.join(DASHBOARD_BUILDERS)}")
+    p_dash.add_argument("--dry-run", action="store_true", help="Print ZML without modifying file")
+
     # audit
     p_audit = sub.add_parser("audit", help="Audit descriptions, reports, menus")
     p_audit.add_argument("ds_file", help="Path to .ds file")
@@ -450,6 +606,18 @@ def main() -> None:
         names = [n.strip() for n in args.reports.split(",")]
         modified = restrict_menus(ds_path, names)
         print(f"Restricted menus on {modified} block(s) in {ds_path}")
+
+    elif args.command == "rebuild-dashboard":
+        page = args.page
+        if page not in DASHBOARD_BUILDERS:
+            print(f"Error: No builder for page '{page}'. "
+                  f"Available: {', '.join(DASHBOARD_BUILDERS)}", file=sys.stderr)
+            sys.exit(1)
+        zml = DASHBOARD_BUILDERS[page]()
+        if args.dry_run:
+            print(zml)
+        else:
+            replace_page_content(ds_path, page, zml)
 
     elif args.command == "audit":
         audit_ds(ds_path)
