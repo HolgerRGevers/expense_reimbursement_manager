@@ -47,7 +47,7 @@
 			(
 				type = picklist
 				displayname = "Action"
-				values = {"Submitted","Approved (LM)","Approved (HoD)","Rejected","Escalated (SLA Breach)","Resubmitted"}
+				values = {"Submitted","Submitted (Self-approval bypass)","Approved (LM)","Approved (HoD)","Approved (Key 1)","Approved (Key 2)","Rejected","Rejected (Key 2)","Reconsidered (Key 1)","Escalated (SLA Breach)","Resubmitted","Warning"}
 				description
 				[
 					type = help_text
@@ -127,6 +127,139 @@
    						type = cancel
    						displayname = "Cancel"
 					)
+				}
+				on level 3
+				{
+					approvers
+					(
+						role = "Finance Director"
+					)
+					on approve 
+					{
+						actions  (status == "Pending Second Key")
+						{
+						on load
+						(
+							custom deluge script 
+							(
+						// ============================================================
+						// Script:   finance_approval.on_approve.dg
+						// Location: Approval Process > Line Manager Approval > Level 3 > On Approve
+						// Trigger:  Approver clicks Approve
+						// Purpose:  Two-Key second approval (Key 2). Validates independence, sets final approval.
+						// Version:  v3.0 (Two-Key Threshold Authorization)
+						// ============================================================
+						
+						// --- Same-person prevention (segregation of duties) ---
+						key1 = ifnull(input.Key_1_Approver, "");
+						current = zoho.loginuser;
+						
+						if (key1 == current && key1 != "")
+						{
+						    // Block: same person cannot be both Key 1 and Key 2
+						    input.status = "Pending Second Key";
+						
+						    row = insert into approval_history
+						    [
+						        claim = input.ID
+						        action_1 = "Warning"
+						        actor = zoho.loginuser
+						        timestamp = zoho.currenttime
+						        comments = "Key 2 approval blocked: same person (" + current + ") cannot serve as both Key 1 and Key 2. Claim remains pending."
+						        Added_User = zoho.loginuser
+						    ];
+						
+						    sendmail
+						    [
+						        from : zoho.adminuserid
+						        to : zoho.adminuserid
+						        subject : "GOVERNANCE ALERT - Claim " + input.claim_id + " - Same-Person Key 2 Blocked"
+						        message : "User " + current + " attempted to act as both Key 1 and Key 2 on claim " + input.claim_id + " (R" + input.amount_zar + "). Approval blocked. A different Key 2 approver is required."
+						    ];
+						
+						    return;
+						}
+						
+						// --- Key 2 final approval ---
+						input.status = "Approved";
+						input.Key_2_Approver = zoho.loginuser;
+						input.Key_2_Timestamp = zoho.currenttime;
+						
+						row = insert into approval_history
+						[
+						    claim = input.ID
+						    action_1 = "Approved (Key 2)"
+						    actor = zoho.loginuser
+						    timestamp = zoho.currenttime
+						    comments = "Finance Director approved (Key 2). Key 1: " + ifnull(input.Key_1_Approver, "UNKNOWN") + ". Key 2: " + current + ". Dual-approval complete."
+						    Added_User = zoho.loginuser
+						];
+						
+						sendmail
+						[
+						    from : zoho.adminuserid
+						    to : input.Email
+						    subject : "Expense Claim " + input.claim_id + " - Final Approval (Dual Key)"
+						    message : "Your claim for R" + input.amount_zar + " has received final approval under dual-key authorization.\nKey 1 (HoD): " + ifnull(input.Key_1_Approver, "UNKNOWN") + "\nKey 2 (Finance Director): " + current
+						];
+							)
+						)
+						}
+					}
+					on reject
+					{
+						actions  (status == "Pending Second Key")
+						{
+						on load
+						(
+							custom deluge script 
+							(
+						// ============================================================
+						// Script:   finance_approval.on_reject.dg
+						// Location: Approval Process > Line Manager Approval > Level 3 > On Reject
+						// Trigger:  Approver clicks Reject
+						// Purpose:  Two-Key rejection: dispute pattern. Routes back to HoD for reconsideration, not direct rejection.
+						// Version:  v3.0 (Two-Key Threshold Authorization)
+						// ============================================================
+						
+						// Key 2 rejection does NOT set status to "Rejected" directly.
+						// Instead, it creates a dispute for HoD to reconsider.
+						input.status = "Key 2 Dispute";
+						
+						rejectReason = ifnull(input.Rejection_Reason, "No reason provided");
+						key1Name = ifnull(input.Key_1_Approver, "UNKNOWN");
+						
+						row = insert into approval_history
+						[
+						    claim = input.ID
+						    action_1 = "Rejected (Key 2)"
+						    actor = zoho.loginuser
+						    timestamp = zoho.currenttime
+						    comments = "Finance Director (Key 2) disputes Key 1 approval by " + key1Name + ". Reason: " + rejectReason
+						    Added_User = zoho.loginuser
+						];
+						
+						// Notify HoD that their approval is disputed
+						sendmail
+						[
+						    from : zoho.adminuserid
+						    to : "hod.demo@yourdomain.com"
+						    subject : "Expense Claim " + input.claim_id + " - Key 2 Dispute"
+						    message : "The Finance Director has disputed your Key 1 approval for claim " + input.claim_id + " (R" + input.amount_zar + ").\nReason: " + rejectReason + "\nPlease review and either re-approve (override) or reject the claim."
+						];
+						
+						// Notify employee that claim is under review
+						sendmail
+						[
+						    from : zoho.adminuserid
+						    to : input.Email
+						    subject : "Expense Claim " + input.claim_id + " - Under Review"
+						    message : "Your claim for R" + input.amount_zar + " is under additional review by management. You will be notified of the outcome."
+						];
+							)
+						)
+						}
+					}
 				}
 			}
 		}
@@ -208,6 +341,46 @@
 				width = medium
 			)
 
+			Requires_Dual_Approval
+			(
+				type = checkbox
+				displayname = "Requires Dual Approval"
+				initial value = false
+				description
+				[
+					type = help_text
+					message = "Whether this tier triggers dual-approval (two-key) authorization."
+				]
+ 				row = 1
+ 				column = 1
+				width = medium
+			)
+			Dual_Approval_Role
+			(
+    			type = text
+				displayname = "Dual Approval Role"
+				description
+				[
+					type = help_text
+					message = "Role that acts as Key 2 approver when dual-approval is required."
+				]
+ 				row = 1
+ 				column = 1
+				width = medium
+			)
+			Dual_Threshold_ZAR
+			(
+				displayname = "Dual Threshold ZAR"
+				type = ZAR
+				description
+				[
+					type = help_text
+					message = "Amount threshold (ZAR) above which dual-approval is required."
+				]
+ 				row = 1
+ 				column = 1
+				width = medium
+			)
 			actions
 			{
 				on add
@@ -663,7 +836,7 @@
 			(
 				type = picklist
 				displayname = "Status"
-				values = {"Draft","Submitted","Pending LM Approval","Pending HoD Approval","Approved","Rejected","Resubmitted"}
+				values = {"Draft","Submitted","Pending LM Approval","Pending HoD Approval","Pending Second Key","Key 2 Dispute","Approved","Rejected","Resubmitted"}
 				description
 				[
 					type = help_text
@@ -745,6 +918,56 @@
 				width = medium
 			)
 	
+			Requires_Dual_Approval
+			(
+				type = checkbox
+				displayname = "Requires Dual Approval"
+				initial value = false
+				private = true
+ 				row = 1
+ 				column = 1
+				width = medium
+			)
+			Key_1_Approver
+			(
+    			type = text
+				displayname = "Key 1 Approver"
+				private = true
+ 				row = 1
+ 				column = 1   
+				width = medium
+			)
+			Key_1_Timestamp
+			(
+    			type = datetime
+				displayname = "Key 1 Timestamp"
+				timedisplayoptions = "hh:mm:ss"
+				alloweddays = 0,1,2,3,4,5,6
+				private = true
+ 				row = 1
+ 				column = 1   
+				width = medium
+			)
+			Key_2_Approver
+			(
+    			type = text
+				displayname = "Key 2 Approver"
+				private = true
+ 				row = 1
+ 				column = 1   
+				width = medium
+			)
+			Key_2_Timestamp
+			(
+    			type = datetime
+				displayname = "Key 2 Timestamp"
+				timedisplayoptions = "hh:mm:ss"
+				alloweddays = 0,1,2,3,4,5,6
+				private = true
+ 				row = 1
+ 				column = 1   
+				width = medium
+			)
 			actions
 			{
 				on add
@@ -2186,6 +2409,11 @@
 							}
 						}
 					}
+					"Finance Director"
+					{
+						description = "Two-Key second approver for high-value claims"
+					}
+
 				}
 			}
 			role Hierarchy = {approval_history,expense_claims}

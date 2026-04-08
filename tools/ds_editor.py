@@ -506,6 +506,374 @@ def replace_page_content(ds_path: Path, page_name: str, new_zml: str) -> None:
 
 
 # ============================================================
+# Apply Two-Key Threshold Authorization
+# ============================================================
+
+def _read_script(scripts_dir: Path, relative: str) -> str:
+    """Read a Deluge script file and return its contents."""
+    path = scripts_dir / relative
+    if not path.exists():
+        print(f"ERROR: Script not found: {path}", file=sys.stderr)
+        sys.exit(1)
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def _indent_script(script: str, tab_count: int) -> str:
+    """Indent each line of a script with the given number of tabs."""
+    prefix = "\t" * tab_count
+    lines = script.rstrip("\n").split("\n")
+    return "\n".join(prefix + line if line.strip() else prefix for line in lines)
+
+
+def apply_two_key(ds_path: Path, scripts_dir: Path, dry_run: bool = False) -> int:
+    """Deploy all Two-Key Threshold Authorization changes to a .ds file.
+
+    Performs 6 targeted modifications:
+      1. Add dual-approval fields to expense_claims form
+      2. Add dual-approval config fields to approval_thresholds form
+      3. Update status picklist with two-key statuses
+      4. Update action_1 picklist with two-key actions
+      5. Add Level 3 approval block with Finance Director scripts
+      6. Add Finance Director role to hierarchy
+
+    Returns the number of modifications applied.
+    """
+    with open(ds_path, encoding="utf-8") as f:
+        content = f.read()
+
+    original = content
+    count = 0
+    skipped: list[str] = []
+
+    # ------------------------------------------------------------------
+    # Modification 1: Add new fields to expense_claims form
+    # ------------------------------------------------------------------
+    if "Key_1_Approver" in content:
+        skipped.append("Mod 1 (expense_claims fields): Key_1_Approver already present")
+    else:
+        # Find the gl_code field closing in expense_claims, followed by blank + actions
+        # Pattern: the closing ) of gl_code, then blank line, then \t\t\t actions
+        # Search from expense_claims form position to avoid matching earlier forms
+        ec_start = content.find("form expense_claims")
+        if ec_start == -1:
+            print("ERROR: Could not find form expense_claims", file=sys.stderr)
+            sys.exit(1)
+        marker = "\t\t\t)\n\t\n\t\t\tactions"
+        pos = content.find(marker, ec_start)
+        if pos == -1:
+            print("ERROR: Could not find gl_code closing + actions marker in expense_claims", file=sys.stderr)
+            sys.exit(1)
+
+        new_fields = (
+            "\t\t\tRequires_Dual_Approval\n"
+            "\t\t\t(\n"
+            "\t\t\t\ttype = checkbox\n"
+            "\t\t\t\tdisplayname = \"Requires Dual Approval\"\n"
+            "\t\t\t\tinitial value = false\n"
+            "\t\t\t\tprivate = true\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tKey_1_Approver\n"
+            "\t\t\t(\n"
+            "    \t\t\ttype = text\n"
+            "\t\t\t\tdisplayname = \"Key 1 Approver\"\n"
+            "\t\t\t\tprivate = true\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1   \n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tKey_1_Timestamp\n"
+            "\t\t\t(\n"
+            "    \t\t\ttype = datetime\n"
+            "\t\t\t\tdisplayname = \"Key 1 Timestamp\"\n"
+            "\t\t\t\ttimedisplayoptions = \"hh:mm:ss\"\n"
+            "\t\t\t\talloweddays = 0,1,2,3,4,5,6\n"
+            "\t\t\t\tprivate = true\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1   \n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tKey_2_Approver\n"
+            "\t\t\t(\n"
+            "    \t\t\ttype = text\n"
+            "\t\t\t\tdisplayname = \"Key 2 Approver\"\n"
+            "\t\t\t\tprivate = true\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1   \n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tKey_2_Timestamp\n"
+            "\t\t\t(\n"
+            "    \t\t\ttype = datetime\n"
+            "\t\t\t\tdisplayname = \"Key 2 Timestamp\"\n"
+            "\t\t\t\ttimedisplayoptions = \"hh:mm:ss\"\n"
+            "\t\t\t\talloweddays = 0,1,2,3,4,5,6\n"
+            "\t\t\t\tprivate = true\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1   \n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+        )
+        # Insert new fields before the "\t\t\tactions" part
+        insert_at = pos + len("\t\t\t)\n\t\n")
+        content = content[:insert_at] + new_fields + content[insert_at:]
+        count += 1
+        print("  Mod 1: Added 5 dual-approval fields to expense_claims form")
+
+    # ------------------------------------------------------------------
+    # Modification 2: Add new fields to approval_thresholds form
+    # ------------------------------------------------------------------
+    if "Dual_Threshold_ZAR" in content:
+        skipped.append("Mod 2 (approval_thresholds fields): Dual_Threshold_ZAR already present")
+    else:
+        # Find 'form approval_thresholds' then the first 'actions' block inside it
+        at_start = content.find("form approval_thresholds")
+        if at_start == -1:
+            print("ERROR: Could not find form approval_thresholds", file=sys.stderr)
+            sys.exit(1)
+        # Find the first \n\t\t\tactions after the form start (with possible blank line before)
+        actions_marker = "\n\t\t\tactions"
+        actions_pos = content.find(actions_marker, at_start)
+        if actions_pos == -1:
+            print("ERROR: Could not find actions block in approval_thresholds", file=sys.stderr)
+            sys.exit(1)
+
+        new_at_fields = (
+            "\t\t\tRequires_Dual_Approval\n"
+            "\t\t\t(\n"
+            "\t\t\t\ttype = checkbox\n"
+            "\t\t\t\tdisplayname = \"Requires Dual Approval\"\n"
+            "\t\t\t\tinitial value = false\n"
+            "\t\t\t\tdescription\n"
+            "\t\t\t\t[\n"
+            "\t\t\t\t\ttype = help_text\n"
+            "\t\t\t\t\tmessage = \"Whether this tier triggers dual-approval (two-key) authorization.\"\n"
+            "\t\t\t\t]\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tDual_Approval_Role\n"
+            "\t\t\t(\n"
+            "    \t\t\ttype = text\n"
+            "\t\t\t\tdisplayname = \"Dual Approval Role\"\n"
+            "\t\t\t\tdescription\n"
+            "\t\t\t\t[\n"
+            "\t\t\t\t\ttype = help_text\n"
+            "\t\t\t\t\tmessage = \"Role that acts as Key 2 approver when dual-approval is required.\"\n"
+            "\t\t\t\t]\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+            "\t\t\tDual_Threshold_ZAR\n"
+            "\t\t\t(\n"
+            "\t\t\t\tdisplayname = \"Dual Threshold ZAR\"\n"
+            "\t\t\t\ttype = ZAR\n"
+            "\t\t\t\tdescription\n"
+            "\t\t\t\t[\n"
+            "\t\t\t\t\ttype = help_text\n"
+            "\t\t\t\t\tmessage = \"Amount threshold (ZAR) above which dual-approval is required.\"\n"
+            "\t\t\t\t]\n"
+            " \t\t\t\trow = 1\n"
+            " \t\t\t\tcolumn = 1\n"
+            "\t\t\t\twidth = medium\n"
+            "\t\t\t)\n"
+        )
+        # Insert before the actions marker (after the newline)
+        content = content[:actions_pos + 1] + new_at_fields + content[actions_pos + 1:]
+        count += 1
+        print("  Mod 2: Added 3 dual-approval config fields to approval_thresholds form")
+
+    # ------------------------------------------------------------------
+    # Modification 3: Update status picklist on expense_claims
+    # ------------------------------------------------------------------
+    old_status = 'values = {"Draft","Submitted","Pending LM Approval","Pending HoD Approval","Approved","Rejected","Resubmitted"}'
+    new_status = 'values = {"Draft","Submitted","Pending LM Approval","Pending HoD Approval","Pending Second Key","Key 2 Dispute","Approved","Rejected","Resubmitted"}'
+    if "Pending Second Key" in content:
+        skipped.append("Mod 3 (status picklist): Pending Second Key already present")
+    elif old_status not in content:
+        print("ERROR: Could not find expected status picklist values", file=sys.stderr)
+        sys.exit(1)
+    else:
+        content = content.replace(old_status, new_status, 1)
+        count += 1
+        print("  Mod 3: Updated status picklist with two-key statuses")
+
+    # ------------------------------------------------------------------
+    # Modification 4: Update action_1 picklist on approval_history
+    # ------------------------------------------------------------------
+    old_actions = 'values = {"Submitted","Approved (LM)","Approved (HoD)","Rejected","Escalated (SLA Breach)","Resubmitted"}'
+    new_actions = 'values = {"Submitted","Submitted (Self-approval bypass)","Approved (LM)","Approved (HoD)","Approved (Key 1)","Approved (Key 2)","Rejected","Rejected (Key 2)","Reconsidered (Key 1)","Escalated (SLA Breach)","Resubmitted","Warning"}'
+    if "Approved (Key 1)" in content:
+        skipped.append("Mod 4 (action_1 picklist): Approved (Key 1) already present")
+    elif old_actions not in content:
+        print("ERROR: Could not find expected action_1 picklist values", file=sys.stderr)
+        sys.exit(1)
+    else:
+        content = content.replace(old_actions, new_actions, 1)
+        count += 1
+        print("  Mod 4: Updated action_1 picklist with two-key actions")
+
+    # ------------------------------------------------------------------
+    # Modification 5: Add Level 3 to approval process
+    # ------------------------------------------------------------------
+    if "on level 3" in content:
+        skipped.append("Mod 5 (Level 3 approval): on level 3 already present")
+    else:
+        # Read the approval scripts
+        approve_script = _read_script(
+            scripts_dir, "approval-scripts/finance_approval.on_approve.dg"
+        )
+        reject_script = _read_script(
+            scripts_dir, "approval-scripts/finance_approval.on_reject.dg"
+        )
+
+        # Indent scripts with 6 tabs
+        indented_approve = _indent_script(approve_script, 6)
+        indented_reject = _indent_script(reject_script, 6)
+
+        level3_block = (
+            "\t\t\t\ton level 3\n"
+            "\t\t\t\t{\n"
+            "\t\t\t\t\tapprovers\n"
+            "\t\t\t\t\t(\n"
+            "\t\t\t\t\t\trole = \"Finance Director\"\n"
+            "\t\t\t\t\t)\n"
+            "\t\t\t\t\ton approve \n"
+            "\t\t\t\t\t{\n"
+            "\t\t\t\t\t\tactions  (status == \"Pending Second Key\")\n"
+            "\t\t\t\t\t\t{\n"
+            "\t\t\t\t\t\ton load\n"
+            "\t\t\t\t\t\t(\n"
+            "\t\t\t\t\t\t\tcustom deluge script \n"
+            "\t\t\t\t\t\t\t(\n"
+            + indented_approve + "\n"
+            "\t\t\t\t\t\t\t)\n"
+            "\t\t\t\t\t\t)\n"
+            "\t\t\t\t\t\t}\n"
+            "\t\t\t\t\t}\n"
+            "\t\t\t\t\ton reject\n"
+            "\t\t\t\t\t{\n"
+            "\t\t\t\t\t\tactions  (status == \"Pending Second Key\")\n"
+            "\t\t\t\t\t\t{\n"
+            "\t\t\t\t\t\ton load\n"
+            "\t\t\t\t\t\t(\n"
+            "\t\t\t\t\t\t\tcustom deluge script \n"
+            "\t\t\t\t\t\t\t(\n"
+            + indented_reject + "\n"
+            "\t\t\t\t\t\t\t)\n"
+            "\t\t\t\t\t\t)\n"
+            "\t\t\t\t\t\t}\n"
+            "\t\t\t\t\t}\n"
+            "\t\t\t\t}\n"
+        )
+
+        # Find end of level 2 block — search for the pattern that closes it
+        # Level 2 ends with "\t\t\t\t}\n\t\t\t}\n\t\t}" (level2 close, approval close, form close)
+        level2_end_marker = "\t\t\t\t}\n\t\t\t}\n\t\t}"
+        level2_pos = content.find(level2_end_marker)
+        if level2_pos == -1:
+            print("ERROR: Could not find end of level 2 block", file=sys.stderr)
+            sys.exit(1)
+        # Insert after the level 2 closing brace line
+        insert_at = level2_pos + len("\t\t\t\t}\n")
+        content = content[:insert_at] + level3_block + content[insert_at:]
+        count += 1
+        print("  Mod 5: Added Level 3 (Finance Director) approval block with scripts")
+
+    # ------------------------------------------------------------------
+    # Modification 6: Add Finance Director role
+    # ------------------------------------------------------------------
+    # Check specifically in the roles block, not the whole file
+    roles_block_start = content.find("roles\n\t\t\t{")
+    roles_has_fd = roles_block_start != -1 and "Finance Director" in content[roles_block_start:roles_block_start + 500]
+    if roles_has_fd:
+        skipped.append("Mod 6 (Finance Director role): Finance Director already present in roles")
+    else:
+        # Find the HoD role closing inside the roles hierarchy
+        # Pattern: the closing } of HoD, then CEO's closing }
+        # HoD block: "HoD" { description = "..." "Line Manager" { ... } }
+        # We need to find the } that closes HoD, which is followed by }  closing CEO
+        roles_start = content.find("roles\n\t\t\t{")
+        if roles_start == -1:
+            print("ERROR: Could not find roles hierarchy block", file=sys.stderr)
+            sys.exit(1)
+
+        # Find HoD within the roles block
+        hod_pos = content.find('"HoD"', roles_start)
+        if hod_pos == -1:
+            print("ERROR: Could not find HoD in roles hierarchy", file=sys.stderr)
+            sys.exit(1)
+
+        # Track braces to find HoD's closing }
+        brace_start = content.find("{", hod_pos)
+        depth = 0
+        hod_close = -1
+        for i in range(brace_start, len(content)):
+            if content[i] == "{":
+                depth += 1
+            elif content[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    hod_close = i
+                    break
+
+        if hod_close == -1:
+            print("ERROR: Could not find closing brace of HoD role", file=sys.stderr)
+            sys.exit(1)
+
+        fd_role = (
+            '\n\t\t\t\t\t"Finance Director"\n'
+            "\t\t\t\t\t{\n"
+            '\t\t\t\t\t\tdescription = "Two-Key second approver for high-value claims"\n'
+            "\t\t\t\t\t}\n"
+        )
+        # Insert after HoD's closing }
+        insert_at = hod_close + 1
+        content = content[:insert_at] + fd_role + content[insert_at:]
+        count += 1
+        print("  Mod 6: Added Finance Director role to hierarchy")
+
+    # ------------------------------------------------------------------
+    # Report skipped modifications
+    # ------------------------------------------------------------------
+    for s in skipped:
+        print(f"  SKIPPED: {s}")
+
+    # ------------------------------------------------------------------
+    # Validate brace balance
+    # ------------------------------------------------------------------
+    open_braces = content.count("{")
+    close_braces = content.count("}")
+    open_parens = content.count("(")
+    close_parens = content.count(")")
+    if open_braces != close_braces:
+        print(f"  WARNING: Brace imbalance after modifications: {{ = {open_braces}, }} = {close_braces}")
+    else:
+        print(f"  Brace balance OK: {open_braces} pairs")
+    if open_parens != close_parens:
+        print(f"  WARNING: Paren imbalance after modifications: ( = {open_parens}, ) = {close_parens}")
+    else:
+        print(f"  Paren balance OK: {open_parens} pairs")
+
+    # ------------------------------------------------------------------
+    # Write result
+    # ------------------------------------------------------------------
+    if dry_run:
+        print(f"\n  DRY RUN: {count} modification(s) would be applied (file not changed)")
+    else:
+        if count > 0:
+            with open(ds_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+    return count
+
+
+# ============================================================
 # Audit
 # ============================================================
 
@@ -577,6 +945,12 @@ def main() -> None:
                         help=f"Page name to rebuild. Available: {', '.join(DASHBOARD_BUILDERS)}")
     p_dash.add_argument("--dry-run", action="store_true", help="Print ZML without modifying file")
 
+    # apply-two-key
+    p_twokey = sub.add_parser("apply-two-key", help="Deploy Two-Key Threshold Authorization schema changes")
+    p_twokey.add_argument("ds_file", help="Path to .ds file")
+    p_twokey.add_argument("--scripts-dir", default="src/deluge", help="Path to Deluge scripts directory")
+    p_twokey.add_argument("--dry-run", action="store_true", help="Show changes without modifying file")
+
     # audit
     p_audit = sub.add_parser("audit", help="Audit descriptions, reports, menus")
     p_audit.add_argument("ds_file", help="Path to .ds file")
@@ -620,6 +994,11 @@ def main() -> None:
             print(zml)
         else:
             replace_page_content(ds_path, page, zml)
+
+    elif args.command == "apply-two-key":
+        scripts = Path(args.scripts_dir) if hasattr(args, "scripts_dir") else Path("src/deluge")
+        count = apply_two_key(ds_path, scripts, dry_run=getattr(args, "dry_run", False))
+        print(f"Applied {count} Two-Key modification(s) to {ds_path}")
 
     elif args.command == "audit":
         audit_ds(ds_path)
