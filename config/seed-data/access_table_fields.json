@@ -22,6 +22,9 @@
   { "table_name": "Approval_Thresholds", "field_name": "Approver_Role",        "access_type": "TEXT(100)",     "zoho_form": "approval_thresholds",  "zoho_field": "approver_role",         "notes": null },
   { "table_name": "Approval_Thresholds", "field_name": "Tier_Order",           "access_type": "INTEGER",      "zoho_form": "approval_thresholds",  "zoho_field": "Tier_Order",            "notes": null },
   { "table_name": "Approval_Thresholds", "field_name": "Active",               "access_type": "BIT",           "zoho_form": "approval_thresholds",  "zoho_field": "Active",                "notes": null },
+  { "table_name": "Approval_Thresholds", "field_name": "Requires_Dual_Approval","access_type": "BIT",           "zoho_form": "approval_thresholds",  "zoho_field": "Requires_Dual_Approval","notes": "Two-Key flag" },
+  { "table_name": "Approval_Thresholds", "field_name": "Dual_Approval_Role",   "access_type": "TEXT(100)",     "zoho_form": "approval_thresholds",  "zoho_field": "Dual_Approval_Role",    "notes": "Key 2 role name" },
+  { "table_name": "Approval_Thresholds", "field_name": "Dual_Threshold_ZAR",   "access_type": "CURRENCY",     "zoho_form": "approval_thresholds",  "zoho_field": "Dual_Threshold_ZAR",    "notes": "Amount above which Two-Key applies" },
 
   { "table_name": "Expense_Claims",      "field_name": "ID",                   "access_type": "AUTOINCREMENT", "zoho_form": "expense_claims",       "zoho_field": "ID",                    "notes": "PK" },
   { "table_name": "Expense_Claims",      "field_name": "Employee_Name",        "access_type": "TEXT(200)",     "zoho_form": "expense_claims",       "zoho_field": "Employee_Name1",        "notes": "Composite name field in Zoho" },
@@ -41,6 +44,9 @@
   { "table_name": "Expense_Claims",      "field_name": "Version",              "access_type": "INTEGER",      "zoho_form": "expense_claims",       "zoho_field": "Version",               "notes": "Default: 1" },
   { "table_name": "Expense_Claims",      "field_name": "Retention_Expiry_Date","access_type": "DATETIME",     "zoho_form": "expense_claims",       "zoho_field": "Retention_Expiry_Date", "notes": null },
   { "table_name": "Expense_Claims",      "field_name": "GL_Code_ID",           "access_type": "LONG",          "zoho_form": "expense_claims",       "zoho_field": "gl_code",               "notes": "FK -> GL_Accounts.ID" },
+  { "table_name": "Expense_Claims",      "field_name": "Requires_Dual_Approval","access_type": "BIT",           "zoho_form": "expense_claims",       "zoho_field": "Requires_Dual_Approval","notes": "Two-Key flag, set by HoD approval" },
+  { "table_name": "Expense_Claims",      "field_name": "Key_1_Approver",       "access_type": "TEXT(200)",     "zoho_form": "expense_claims",       "zoho_field": "Key_1_Approver",        "notes": "Stores Key 1 username for same-person prevention" },
+  { "table_name": "Expense_Claims",      "field_name": "Key_1_Timestamp",      "access_type": "DATETIME",     "zoho_form": "expense_claims",       "zoho_field": "Key_1_Timestamp",       "notes": "When Key 1 approved, used for Key 2 SLA" },
 
   { "table_name": "Approval_History",    "field_name": "ID",                   "access_type": "AUTOINCREMENT", "zoho_form": "approval_history",     "zoho_field": null,                    "notes": "PK" },
   { "table_name": "Approval_History",    "field_name": "Claim_ID",             "access_type": "LONG",          "zoho_form": "approval_history",     "zoho_field": "claim",                 "notes": "FK -> Expense_Claims.ID" },

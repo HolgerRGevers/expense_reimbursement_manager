@@ -20,6 +20,9 @@
   { "access_table": "Approval_Thresholds", "access_field": "Approver_Role",    "zoho_form": "approval_thresholds", "zoho_field": "approver_role",   "transform_notes": null },
   { "access_table": "Approval_Thresholds", "access_field": "Tier_Order",       "zoho_form": "approval_thresholds", "zoho_field": "Tier_Order",      "transform_notes": null },
   { "access_table": "Approval_Thresholds", "access_field": "Active",           "zoho_form": "approval_thresholds", "zoho_field": "Active",          "transform_notes": null },
+  { "access_table": "Approval_Thresholds", "access_field": "Requires_Dual_Approval", "zoho_form": "approval_thresholds", "zoho_field": "Requires_Dual_Approval", "transform_notes": "Two-Key flag" },
+  { "access_table": "Approval_Thresholds", "access_field": "Dual_Approval_Role",     "zoho_form": "approval_thresholds", "zoho_field": "Dual_Approval_Role",     "transform_notes": null },
+  { "access_table": "Approval_Thresholds", "access_field": "Dual_Threshold_ZAR",     "zoho_form": "approval_thresholds", "zoho_field": "Dual_Threshold_ZAR",     "transform_notes": null },
 
   { "access_table": "Expense_Claims", "access_field": "Employee_Name",         "zoho_form": "expense_claims",    "zoho_field": "Employee_Name1",     "transform_notes": "Composite name field" },
   { "access_table": "Expense_Claims", "access_field": "Email",                 "zoho_form": "expense_claims",    "zoho_field": "Email",              "transform_notes": null },
@@ -38,6 +41,9 @@
   { "access_table": "Expense_Claims", "access_field": "Version",               "zoho_form": "expense_claims",    "zoho_field": "Version",            "transform_notes": null },
   { "access_table": "Expense_Claims", "access_field": "Retention_Expiry_Date", "zoho_form": "expense_claims",    "zoho_field": "Retention_Expiry_Date", "transform_notes": null },
   { "access_table": "Expense_Claims", "access_field": "GL_Code_ID",            "zoho_form": "expense_claims",    "zoho_field": "gl_code",            "transform_notes": "FK -> lookup" },
+  { "access_table": "Expense_Claims", "access_field": "Requires_Dual_Approval","zoho_form": "expense_claims",    "zoho_field": "Requires_Dual_Approval","transform_notes": "Two-Key flag" },
+  { "access_table": "Expense_Claims", "access_field": "Key_1_Approver",       "zoho_form": "expense_claims",    "zoho_field": "Key_1_Approver",     "transform_notes": null },
+  { "access_table": "Expense_Claims", "access_field": "Key_1_Timestamp",      "zoho_form": "expense_claims",    "zoho_field": "Key_1_Timestamp",    "transform_notes": null },
 
   { "access_table": "Approval_History", "access_field": "Claim_ID",            "zoho_form": "approval_history",  "zoho_field": "claim",              "transform_notes": "FK -> lookup" },
   { "access_table": "Approval_History", "access_field": "Action_Type",         "zoho_form": "approval_history",  "zoho_field": "action_1",           "transform_notes": "IMPORTANT: Zoho uses action_1" },

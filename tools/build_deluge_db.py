@@ -362,6 +362,9 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("expense_claims", "Parent_Claim_ID", "Parent Claim ID", "picklist", "Self-ref FK"),
         ("expense_claims", "gl_code", "GL Code", "list", "FK -> gl_accounts.ID"),
         ("expense_claims", "ID", "ID", "autonumber", "System-generated"),
+        ("expense_claims", "Requires_Dual_Approval", "Requires Dual Approval", "checkbox", "Two-Key flag, set by HoD approval"),
+        ("expense_claims", "Key_1_Approver", "Key 1 Approver", "text", "Stores Key 1 approver username"),
+        ("expense_claims", "Key_1_Timestamp", "Key 1 Timestamp", "datetime", "When Key 1 approved"),
     ]
     # Approval History
     ah_fields = [
@@ -379,6 +382,9 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("approval_thresholds", "approver_role", "Approver Role", "text", None),
         ("approval_thresholds", "Tier_Order", "Tier Order", "number", "Escalation sequence"),
         ("approval_thresholds", "Active", "Active", "checkbox", "Default: true"),
+        ("approval_thresholds", "Requires_Dual_Approval", "Requires Dual Approval", "checkbox", "Two-Key flag"),
+        ("approval_thresholds", "Dual_Approval_Role", "Dual Approval Role", "text", "Key 2 approver role"),
+        ("approval_thresholds", "Dual_Threshold_ZAR", "Dual Approval Threshold ZAR", "currency", "Amount above which Two-Key applies"),
     ]
     # GL Accounts
     gl_fields = [
@@ -408,12 +414,14 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
 
 def populate_valid_values(cur: sqlite3.Cursor) -> None:
     for s in ["Draft", "Submitted", "Pending LM Approval", "Pending HoD Approval",
+              "Pending Second Key", "Key 2 Dispute",
               "Approved", "Rejected", "Resubmitted"]:
         cur.execute("INSERT OR REPLACE INTO valid_statuses VALUES (?)", (s,))
 
     for a in ["Submitted", "Submitted (Self-approval bypass)", "Approved (LM)",
-              "Approved (HoD)", "Rejected", "Escalated (SLA Breach)",
-              "Resubmitted", "Warning"]:
+              "Approved (HoD)", "Approved (Key 1)", "Approved (Key 2)",
+              "Rejected", "Rejected (Key 2)", "Reconsidered (Key 1)",
+              "Escalated (SLA Breach)", "Resubmitted", "Warning"]:
         cur.execute("INSERT OR REPLACE INTO valid_actions VALUES (?)", (a,))
 
 

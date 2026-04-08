@@ -95,6 +95,24 @@ scripts:
     context: approval-script
     includes: [audit-trail, sendmail]
 
+  - name: finance_approval.on_approve
+    location: "Approval Process > Line Manager Approval > Level 3 > On Approve"
+    trigger: "Approver clicks Approve"
+    purpose: "Two-Key second approval (Key 2). Validates independence, sets final approval."
+    form: expense_claims
+    event: on_approve
+    context: approval-script
+    includes: [same-person-check, audit-trail, sendmail]
+
+  - name: finance_approval.on_reject
+    location: "Approval Process > Line Manager Approval > Level 3 > On Reject"
+    trigger: "Approver clicks Reject"
+    purpose: "Two-Key second approval rejection. Routes to Key 2 Dispute for HoD reconsideration."
+    form: expense_claims
+    event: on_reject
+    context: approval-script
+    includes: [audit-trail, sendmail]
+
   # --- Scheduled ---
   - name: sla_enforcement_daily
     location: "Workflow > Schedules > SLA_Enforcement_Daily"
