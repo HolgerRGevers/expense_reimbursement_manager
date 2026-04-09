@@ -1,0 +1,56 @@
+# forgeds.yaml — ERM project configuration for ForgeDS engine
+# This file tells ForgeDS about the Expense Reimbursement Manager's
+# schema, thresholds, and Access-to-Zoho mappings.
+
+project:
+  name: "Expense Reimbursement Manager"
+  version: "0.7.0"
+
+# Deluge linter settings
+lint:
+  threshold_fallback: "999.99"
+  dual_threshold_fallback: "5000.00"
+  demo_email_domains:
+    - "yourdomain.com"
+    - "example.com"
+    - "placeholder.com"
+
+# Cross-environment mapping (hybrid linter + validator + uploader)
+schema:
+  mandatory_zoho_fields:
+    - ["expense_claims", "POPIA_Consent"]
+    - ["approval_history", "Added_User"]
+    - ["approval_history", "claim"]
+
+  table_to_form:
+    Departments: "departments"
+    Clients: "clients"
+    GL_Accounts: "gl_accounts"
+    Approval_Thresholds: "approval_thresholds"
+    Expense_Claims: "expense_claims"
+    Approval_History: "approval_history"
+    Compliance_Config: "compliance_config"
+
+  fk_relationships:
+    - child: ["Expense_Claims", "Department_ID"]
+      parent: ["Departments", "ID"]
+    - child: ["Expense_Claims", "Client_ID"]
+      parent: ["Clients", "ID"]
+    - child: ["Expense_Claims", "GL_Code_ID"]
+      parent: ["GL_Accounts", "ID"]
+    - child: ["Approval_History", "Claim_ID"]
+      parent: ["Expense_Claims", "ID"]
+
+  upload_order:
+    - ["Departments", "departments"]
+    - ["Clients", "clients"]
+    - ["GL_Accounts", "gl_accounts"]
+    - ["Approval_Thresholds", "approval_thresholds"]
+    - ["Compliance_Config", "compliance_config"]
+    - ["Expense_Claims", "expense_claims"]
+    - ["Approval_History", "approval_history"]
+
+  exclude_fields: ["ID", "Added_User"]
+
+# Seed data paths (relative to project root)
+seed_data_dir: "config/seed-data"
