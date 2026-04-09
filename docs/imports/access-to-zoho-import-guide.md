@@ -204,7 +204,7 @@ Before importing Access data to Zoho Creator:
 
 - [ ] Export Access tables to CSV using `tools/export_access_csv.py`
 - [ ] Run hybrid linter: `python tools/lint_hybrid.py --data exports/csv/ --scripts src/deluge/`
-- [ ] Run data validator: `python tools/validate_access_data.py exports/csv/`
+- [ ] Run data validator: `python tools/validate_import_data.py exports/csv/`
 - [ ] Verify BIT fields converted to true/false (not -1/0)
 - [ ] Verify DATETIME fields in ISO 8601 format
 - [ ] Verify CURRENCY values as decimal strings (not locale-formatted)

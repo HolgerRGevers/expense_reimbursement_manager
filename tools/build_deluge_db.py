@@ -362,6 +362,13 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("expense_claims", "Parent_Claim_ID", "Parent Claim ID", "picklist", "Self-ref FK"),
         ("expense_claims", "gl_code", "GL Code", "list", "FK -> gl_accounts.ID"),
         ("expense_claims", "ID", "ID", "autonumber", "System-generated"),
+        ("expense_claims", "Requires_Dual_Approval", "Requires Dual Approval", "checkbox", "Two-Key flag, set by HoD approval"),
+        ("expense_claims", "Key_1_Approver", "Key 1 Approver", "text", "Stores Key 1 approver username"),
+        ("expense_claims", "Key_1_Timestamp", "Key 1 Timestamp", "datetime", "When Key 1 approved"),
+        ("expense_claims", "Key_2_Approver", "Key 2 Approver", "text", "Stores Key 2 approver username"),
+        ("expense_claims", "Key_2_Timestamp", "Key 2 Timestamp", "datetime", "When Key 2 approved"),
+        ("expense_claims", "Estimated_Carbon_KG", "Estimated Carbon KG", "decimal", "Calculated: Amount_ZAR * GL.Carbon_Factor"),
+        ("expense_claims", "ESG_Category", "ESG Category", "text", "Denormalized from GL account on approval"),
     ]
     # Approval History
     ah_fields = [
@@ -379,6 +386,9 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("approval_thresholds", "approver_role", "Approver Role", "text", None),
         ("approval_thresholds", "Tier_Order", "Tier Order", "number", "Escalation sequence"),
         ("approval_thresholds", "Active", "Active", "checkbox", "Default: true"),
+        ("approval_thresholds", "Requires_Dual_Approval", "Requires Dual Approval", "checkbox", "Two-Key flag"),
+        ("approval_thresholds", "Dual_Approval_Role", "Dual Approval Role", "text", "Key 2 approver role"),
+        ("approval_thresholds", "Dual_Threshold_ZAR", "Dual Approval Threshold ZAR", "currency", "Amount above which Two-Key applies"),
     ]
     # GL Accounts
     gl_fields = [
@@ -389,6 +399,9 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("gl_accounts", "SARS_Provision", "SARS Provision", "text", None),
         ("gl_accounts", "Risk_Level", "Risk Level", "picklist", "ISO 37001: Standard/Elevated/High"),
         ("gl_accounts", "Active", "Active", "checkbox", "Default: true"),
+        ("gl_accounts", "ESG_Category", "ESG Category", "picklist", "ISSB/GRI: Travel Emissions/Energy/Waste/Social/None"),
+        ("gl_accounts", "Carbon_Factor", "Carbon Factor", "decimal", "kg CO2e per ZAR spent (DEFRA-adapted)"),
+        ("gl_accounts", "GRI_Indicator", "GRI Indicator", "text", "GRI Standards reference (e.g. GRI 305-3)"),
     ]
     # Departments
     dept_fields = [
@@ -402,18 +415,27 @@ def populate_form_fields(cur: sqlite3.Cursor) -> None:
         ("clients", "name", "Name", "text", None),
         ("clients", "is_active", "Active", "checkbox", None),
     ]
-    all_fields = ec_fields + ah_fields + at_fields + gl_fields + dept_fields + cl_fields
+    # Compliance Config
+    cc_fields = [
+        ("compliance_config", "Config_Key", "Config Key", "text", "Unique setting name"),
+        ("compliance_config", "Config_Value", "Config Value", "text", None),
+        ("compliance_config", "Description", "Description", "text", None),
+        ("compliance_config", "Active", "Active", "checkbox", "Default: true"),
+    ]
+    all_fields = ec_fields + ah_fields + at_fields + gl_fields + dept_fields + cl_fields + cc_fields
     cur.executemany("INSERT OR REPLACE INTO form_fields VALUES (?, ?, ?, ?, ?)", all_fields)
 
 
 def populate_valid_values(cur: sqlite3.Cursor) -> None:
     for s in ["Draft", "Submitted", "Pending LM Approval", "Pending HoD Approval",
+              "Pending Second Key", "Key 2 Dispute",
               "Approved", "Rejected", "Resubmitted"]:
         cur.execute("INSERT OR REPLACE INTO valid_statuses VALUES (?)", (s,))
 
     for a in ["Submitted", "Submitted (Self-approval bypass)", "Approved (LM)",
-              "Approved (HoD)", "Rejected", "Escalated (SLA Breach)",
-              "Resubmitted", "Warning"]:
+              "Approved (HoD)", "Approved (Key 1)", "Approved (Key 2)",
+              "Rejected", "Rejected (Key 2)", "Reconsidered (Key 1)",
+              "Escalated (SLA Breach)", "Resubmitted", "Warning"]:
         cur.execute("INSERT OR REPLACE INTO valid_actions VALUES (?)", (a,))
 
 

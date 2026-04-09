@@ -125,7 +125,10 @@ def create_tables(conn: pyodbc.Connection) -> None:
             Receipt_Required BIT,
             SARS_Provision TEXT(100),
             Risk_Level TEXT(20),
-            Active BIT
+            Active BIT,
+            ESG_Category TEXT(50),
+            Carbon_Factor DOUBLE,
+            GRI_Indicator TEXT(50)
         )
     """)
 
@@ -162,7 +165,14 @@ def create_tables(conn: pyodbc.Connection) -> None:
             Rejection_Reason MEMO,
             Version INTEGER,
             Retention_Expiry_Date DATETIME,
-            GL_Code_ID LONG
+            GL_Code_ID LONG,
+            Requires_Dual_Approval BIT,
+            Key_1_Approver TEXT(200),
+            Key_1_Timestamp DATETIME,
+            Key_2_Approver TEXT(200),
+            Key_2_Timestamp DATETIME,
+            Estimated_Carbon_KG DOUBLE,
+            ESG_Category TEXT(50)
         )
     """)
 
@@ -178,8 +188,19 @@ def create_tables(conn: pyodbc.Connection) -> None:
         )
     """)
 
+    # Compliance_Config (config)
+    cur.execute("""
+        CREATE TABLE Compliance_Config (
+            ID AUTOINCREMENT PRIMARY KEY,
+            Config_Key TEXT(100) NOT NULL,
+            Config_Value TEXT(200),
+            Description TEXT(500),
+            Active BIT
+        )
+    """)
+
     conn.commit()
-    print("Created 6 tables")
+    print("Created 7 tables")
 
 
 def create_relationships(db_path: str) -> None:
@@ -240,11 +261,14 @@ def populate_seed_data(conn: pyodbc.Connection) -> None:
     for g in gl_accounts:
         cur.execute(
             "INSERT INTO GL_Accounts (GL_Code, Account_Name, Expense_Category, "
-            "Receipt_Required, SARS_Provision, Risk_Level, Active) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "Receipt_Required, SARS_Provision, Risk_Level, Active, "
+            "ESG_Category, Carbon_Factor, GRI_Indicator) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             g["GL_Code"], g["Account_Name"], g["Expense_Category"],
             g["Receipt_Required"], g["SARS_Provision"],
             g.get("Risk_Level", "Standard"), g["Active"],
+            g.get("ESG_Category", "None"), g.get("Carbon_Factor", 0),
+            g.get("GRI_Indicator", ""),
         )
     print(f"  GL_Accounts: {len(gl_accounts)} records")
 
@@ -259,6 +283,20 @@ def populate_seed_data(conn: pyodbc.Connection) -> None:
             t.get("Tier_Order", 0), t["Active"],
         )
     print(f"  Approval_Thresholds: {len(thresholds)} records")
+
+    # Compliance Config
+    cc_path = SEED_DIR / "compliance_config.json"
+    if cc_path.exists():
+        with open(cc_path, encoding="utf-8") as f:
+            configs = json.load(f)
+        for c in configs:
+            cur.execute(
+                "INSERT INTO Compliance_Config (Config_Key, Config_Value, "
+                "Description, Active) VALUES (?, ?, ?, ?)",
+                c["Config_Key"], c["Config_Value"],
+                c.get("Description", ""), c["Active"],
+            )
+        print(f"  Compliance_Config: {len(configs)} records")
 
     conn.commit()
     print("Seed data loaded")

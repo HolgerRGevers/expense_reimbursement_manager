@@ -5,6 +5,7 @@
 roles:
   line_manager: "linemanager.demo@yourdomain.com"
   hod: "hod.demo@yourdomain.com"
+  finance_director: "financedirector.demo@yourdomain.com"
 
 templates:
   # --- Submission ---
@@ -67,3 +68,40 @@ templates:
     cc_role: hod
     subject: '"REMINDER - Claim " + claim.claim_id + " awaiting approval"'
     message: '"Pending >2 days. Auto-escalates at 3 days."'
+
+  # --- Two-Key Approval ---
+  key1_approved_dual_required:
+    to_role: finance_director
+    subject: '"TWO-KEY APPROVAL - Claim " + input.claim_id + " requires your sign-off"'
+    message: '"HoD approved as Key 1. Amount: R" + input.amount_zar + ". You are Key 2. Both keys required."'
+
+  key2_approved_final:
+    to_field: input.Email
+    subject: '"Expense Claim " + input.claim_id + " - Final Approval (Two-Key)"'
+    message: '"Your claim for R" + input.amount_zar + " has received final approval from both Key 1 and Key 2 approvers."'
+
+  key2_rejected_dispute:
+    to_role: hod
+    subject: '"TWO-KEY DISPUTE - Claim " + input.claim_id + " rejected by Key 2"'
+    message: '"Finance Director (Key 2) disputes your Key 1 approval.\nAmount: R" + input.amount_zar + "\nReason: " + rejectReason + "\nPlease reconsider."'
+
+  key2_dispute_notify_employee:
+    to_field: input.Email
+    subject: '"Expense Claim " + input.claim_id + " - Under Review"'
+    message: '"Your claim for R" + input.amount_zar + " is under review between approvers. You will be notified of the outcome."'
+
+  key1_reconsider_override:
+    to_role: finance_director
+    subject: '"TWO-KEY RECONSIDERATION - Claim " + input.claim_id + " re-approved by Key 1"'
+    message: '"HoD overrides Key 2 rejection. Claim re-routed for second key approval.\nAmount: R" + input.amount_zar'
+
+  key2_sla_reminder:
+    to_role: finance_director
+    cc_role: admin
+    subject: '"REMINDER (Key 2) - Claim " + claim.claim_id + " awaiting approval"'
+    message: '"This claim requires your Key 2 approval. Pending >2 days. Auto-escalates at 3 days."'
+
+  key2_sla_escalation:
+    to_field: zoho.adminuserid
+    subject: '"SLA BREACH (Key 2) - Claim " + claim.claim_id + " escalated"'
+    message: '"Finance Director failed to act on Key 2 approval within 3 days.\nAmount: R" + claim.amount_zar'

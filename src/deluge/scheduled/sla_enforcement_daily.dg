@@ -3,10 +3,12 @@
 // Location: Workflow > Schedules > SLA_Enforcement_Daily
 // Trigger:  Scheduled (daily - Free Trial limitation; hourly on paid plan)
 // Purpose:  SLA enforcement: escalation not bypass. 2-day reminder, 3-day auto-escalation to HoD.
-// Version:  v2.1 (Fix-Forward Remediation Plan)
+//           Key 2 SLA: 2-day reminder to Finance Director, 3-day escalation to CEO/admin.
+// Version:  v3.0 (Two-Key Threshold Authorization)
 // Note:     Uses daysBetween (not hoursBetween) due to Free Trial daily-only schedule constraint
 // ============================================================
 
+// --- Line Manager SLA enforcement ---
 pendingClaims = expense_claims[status == "Pending LM Approval"];
 
 for each claim in pendingClaims
@@ -46,6 +48,48 @@ for each claim in pendingClaims
             cc : "hod.demo@yourdomain.com"
             subject : "REMINDER - Claim " + claim.claim_id + " awaiting approval"
             message : "Pending >2 days. Auto-escalates at 3 days."
+        ];
+    }
+}
+
+// --- Key 2 SLA enforcement ---
+pendingKey2 = expense_claims[status == "Pending Second Key"];
+
+for each claim in pendingKey2
+{
+    key1Time = ifnull(claim.Key_1_Timestamp, claim.Submission_Date);
+    daysSinceKey1 = daysBetween(key1Time, zoho.currentdate);
+
+    if (daysSinceKey1 >= 3)
+    {
+        // Escalate to CEO/admin — Finance Director (Key 2) did not act in time
+        row = insert into approval_history
+        [
+            claim = claim.ID
+            action_1 = "Escalated (SLA Breach)"
+            actor = "SYSTEM"
+            timestamp = zoho.currenttime
+            comments = "Finance Director (Key 2) did not act within 3 days. Escalated to admin."
+            Added_User = zoho.adminuser
+        ];
+
+        sendmail
+        [
+            from : zoho.adminuserid
+            to : zoho.adminuserid
+            subject : "SLA BREACH - Claim " + claim.claim_id + " - Key 2 overdue"
+            message : "Finance Director has not acted on Key 2 approval within 3 days.\nClaim: " + claim.claim_id + "\nAmount: R" + claim.amount_zar + "\nKey 1 Approver: " + ifnull(claim.Key_1_Approver, "UNKNOWN")
+        ];
+    }
+    else if (daysSinceKey1 >= 2)
+    {
+        // Reminder to Finance Director
+        sendmail
+        [
+            from : zoho.adminuserid
+            to : "financedirector.demo@yourdomain.com"
+            subject : "REMINDER - Claim " + claim.claim_id + " awaiting Key 2 approval"
+            message : "Key 2 approval pending >2 days. Escalates to admin at 3 days.\nAmount: R" + claim.amount_zar
         ];
     }
 }

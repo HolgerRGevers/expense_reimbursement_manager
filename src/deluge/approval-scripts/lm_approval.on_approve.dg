@@ -38,6 +38,10 @@ if (input.amount_zar <= thresholdAmount)
     if (glRec != null && glRec.count() > 0)
     {
         input.gl_code = glRec.gl_code;
+        // ESG auto-population (ISSB/GRI metadata)
+        input.ESG_Category = ifnull(glRec.ESG_Category, "None");
+        carbonFactor = ifnull(glRec.Carbon_Factor, 0);
+        input.Estimated_Carbon_KG = input.amount_zar * carbonFactor;
     }
 
     row = insert into approval_history
@@ -46,7 +50,7 @@ if (input.amount_zar <= thresholdAmount)
         action_1 = "Approved (LM)"
         actor = zoho.loginuser
         timestamp = zoho.currenttime
-        comments = "Line Manager final approval. GL: " + ifnull(input.gl_code, "UNMAPPED")
+        comments = "Line Manager final approval. GL: " + ifnull(input.gl_code, "UNMAPPED") + " | ESG: " + ifnull(input.ESG_Category, "None") + " | Carbon: " + ifnull(input.Estimated_Carbon_KG, 0) + "kg"
         Added_User = zoho.loginuser
     ];
 

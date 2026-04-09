@@ -29,7 +29,8 @@ expense_claims:
   gl_code: "General Ledger code assigned during approval. Maps the expense to the correct account."
   Retention_Expiry_Date: "SARS Tax Administration Act S29: 5-year retention from submission date."
   # Private fields (no description needed):
-  # Department_Shadow, Client_Shadow, Parent_Claim_ID
+  # Department_Shadow, Client_Shadow, Parent_Claim_ID, Key_1_Approver, Key_1_Timestamp, Requires_Dual_Approval
+  # Private ESG fields (no description needed): Estimated_Carbon_KG, ESG_Category
 
 approval_history:
   claim: "The expense claim this audit record relates to."
@@ -44,6 +45,9 @@ approval_thresholds:
   approver_role: "The Zoho Creator role that approves claims at this tier."
   Tier_Order: "Numeric order of this tier in the escalation chain. Lower numbers approve first."
   Active: "Whether this threshold tier is currently active in the approval workflow."
+  Requires_Dual_Approval: "When enabled, claims exceeding Dual_Threshold_ZAR require two independent approvers (Two-Key)."
+  Dual_Approval_Role: "The Zoho Creator role that serves as Key 2 approver for dual-approval claims."
+  Dual_Threshold_ZAR: "Claims above this amount require two-key approval when dual approval is enabled."
 
 gl_accounts:
   gl_code: "The General Ledger account code (e.g., 6200). Must match your accounting system."
@@ -53,6 +57,9 @@ gl_accounts:
   SARS_Provision: "Maps each GL code to SARS deduction provision, e.g. S11(a) + S8(1)(a). Used in compliance reporting."
   Risk_Level: "ISO 37001: Categories prone to bribery risk receive enhanced scrutiny."
   Active: "Whether this GL code is currently available for assignment."
+  ESG_Category: "ISSB/GRI sustainability category: Travel Emissions, Energy, Waste, Social, or None."
+  Carbon_Factor: "Estimated kg CO2e per ZAR spent. DEFRA-adapted emission factor for SA energy mix."
+  GRI_Indicator: "GRI Standards indicator code mapped to this GL account (e.g., GRI 305-3)."
 
 departments:
   department_id: "Auto-generated department identifier."
@@ -63,3 +70,9 @@ clients:
   client_id: "Auto-generated client identifier."
   name: "Client name as it appears in dropdown selections."
   is_active: "Whether this client is currently active and available for selection."
+
+compliance_config:
+  Config_Key: "Unique compliance setting name (e.g., ORG_TYPE, ESG_REPORTING)."
+  Config_Value: "Setting value. Interpretation depends on Config_Key."
+  Description: "Human-readable explanation of this compliance setting."
+  Active: "Whether this compliance setting is currently active."

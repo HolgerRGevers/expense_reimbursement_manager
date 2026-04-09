@@ -2,33 +2,111 @@
 // Script:   hod_approval.on_approve.dg
 // Location: Approval Process > HoD Approval > Level 1 > On Approve
 // Trigger:  Approver clicks Approve
-// Purpose:  Final approval, GL code population, audit trail, notification
-// Version:  v2.1 (Fix-Forward Remediation Plan)
+// Purpose:  Two-Key threshold routing. Under dual threshold = final approval + GL.
+//           Over = route to Finance Director (Key 2). Also handles Key 2 dispute reconsideration.
+// Version:  v3.0 (Two-Key Threshold Authorization)
 // ============================================================
 
-input.status = "Approved";
+// --- Scenario B: HoD reconsideration after Key 2 dispute ---
+if (input.status == "Key 2 Dispute")
+{
+    // HoD overrides Key 2 rejection — re-route for new Key 2 cycle
+    input.status = "Pending Second Key";
+    input.Key_1_Approver = zoho.loginuser;
+    input.Key_1_Timestamp = zoho.currenttime;
 
-// GL code auto-population
+    row = insert into approval_history
+    [
+        claim = input.ID
+        action_1 = "Reconsidered (Key 1)"
+        actor = zoho.loginuser
+        timestamp = zoho.currenttime
+        comments = "HoD overrides Key 2 rejection. Re-routed for new Key 2 approval cycle."
+        Added_User = zoho.loginuser
+    ];
+
+    sendmail
+    [
+        from : zoho.adminuserid
+        to : "financedirector.demo@yourdomain.com"
+        subject : "Expense Claim " + input.claim_id + " - HoD Override (Key 2 Dispute)"
+        message : "HoD has reconsidered and overridden the Key 2 rejection for claim R" + input.amount_zar + ". Please review as Key 2 approver."
+    ];
+
+    return;
+}
+
+// --- Scenario A: Normal HoD approval with dual-approval check ---
+
+// Query dual-approval threshold config
+dualRec = approval_thresholds[Requires_Dual_Approval == true && Active == true];
+
+if (dualRec != null)
+{
+    dualThreshold = ifnull(dualRec.Dual_Threshold_ZAR, 5000.00);
+}
+else
+{
+    dualThreshold = 5000.00;
+}
+
+// GL code auto-population (needed for both paths)
 glRec = gl_accounts[expense_category == input.category && Active == true];
 if (glRec != null && glRec.count() > 0)
 {
     input.gl_code = glRec.gl_code;
+    // ESG auto-population (ISSB/GRI metadata)
+    input.ESG_Category = ifnull(glRec.ESG_Category, "None");
+    carbonFactor = ifnull(glRec.Carbon_Factor, 0);
+    input.Estimated_Carbon_KG = input.amount_zar * carbonFactor;
 }
 
-row = insert into approval_history
-[
-    claim = input.ID
-    action_1 = "Approved (HoD)"
-    actor = zoho.loginuser
-    timestamp = zoho.currenttime
-    comments = "Head of Department final approval. GL: " + ifnull(input.gl_code, "UNMAPPED")
-    Added_User = zoho.loginuser
-];
+if (input.amount_zar > dualThreshold)
+{
+    // Over dual threshold — route to Finance Director (Key 2)
+    input.status = "Pending Second Key";
+    input.Requires_Dual_Approval = true;
+    input.Key_1_Approver = zoho.loginuser;
+    input.Key_1_Timestamp = zoho.currenttime;
 
-sendmail
-[
-    from : zoho.adminuserid
-    to : input.Email
-    subject : "Expense Claim " + input.claim_id + " - Final Approval"
-    message : "Your claim for R" + input.amount_zar + " has received final approval."
-]
+    row = insert into approval_history
+    [
+        claim = input.ID
+        action_1 = "Approved (Key 1)"
+        actor = zoho.loginuser
+        timestamp = zoho.currenttime
+        comments = "HoD approved (Key 1). Amount R" + input.amount_zar + " exceeds dual threshold (R" + dualThreshold + "). GL: " + ifnull(input.gl_code, "UNMAPPED") + " | ESG: " + ifnull(input.ESG_Category, "None") + " | Carbon: " + ifnull(input.Estimated_Carbon_KG, 0) + "kg. Routed to Finance Director for Key 2."
+        Added_User = zoho.loginuser
+    ];
+
+    sendmail
+    [
+        from : zoho.adminuserid
+        to : "financedirector.demo@yourdomain.com"
+        subject : "Expense Claim " + input.claim_id + " - Requires Key 2 Approval"
+        message : "HoD (Key 1) approved claim for R" + input.amount_zar + ". Amount exceeds dual-approval threshold. Awaiting your Key 2 review."
+    ];
+}
+else
+{
+    // Under dual threshold (or no dual config) — HoD gives final approval
+    input.status = "Approved";
+
+    row = insert into approval_history
+    [
+        claim = input.ID
+        action_1 = "Approved (HoD)"
+        actor = zoho.loginuser
+        timestamp = zoho.currenttime
+        comments = "Head of Department final approval. GL: " + ifnull(input.gl_code, "UNMAPPED") + " | ESG: " + ifnull(input.ESG_Category, "None") + " | Carbon: " + ifnull(input.Estimated_Carbon_KG, 0) + "kg"
+        Added_User = zoho.loginuser
+    ];
+
+    sendmail
+    [
+        from : zoho.adminuserid
+        to : input.Email
+        subject : "Expense Claim " + input.claim_id + " - Final Approval"
+        message : "Your claim for R" + input.amount_zar + " has received final approval."
+    ];
+}
