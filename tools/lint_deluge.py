@@ -512,6 +512,9 @@ def check_dg019(filename: str, line: str, lineno: int) -> list[Diagnostic]:
     return []
 
 
+# --- Custom API rules (ForgeDS engine rules — will move to forgeds.engines.lint_deluge) ---
+# See docs/forgeds-extraction-guide.md and forgeds.yaml lint_rules.engine_rules
+
 CUSTOM_API_BANNED_TASKS = re.compile(
     r"\b(alert\b|cancel\s+submit\b)", re.IGNORECASE,
 )

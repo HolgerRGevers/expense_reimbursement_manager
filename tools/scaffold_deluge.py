@@ -256,6 +256,9 @@ def generate_threshold_check() -> str:
 # Scaffold assembly
 # ============================================================
 
+# --- Custom API template (ForgeDS engine template — will move to forgeds.engines.scaffold) ---
+# See docs/forgeds-extraction-guide.md and forgeds.yaml scaffold.engine_templates
+
 def generate_custom_api_boilerplate(name: str) -> str:
     """Generate Custom API-specific boilerplate (request extraction, response map)."""
     return (

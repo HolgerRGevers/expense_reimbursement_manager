@@ -52,5 +52,118 @@ schema:
 
   exclude_fields: ["ID", "Added_User"]
 
+# Custom API Builder configuration
+# See docs/zoho-custom-api-builder-research.md for full reference.
+custom_apis:
+  # Context type for manifest and scaffold
+  context: "custom-api"
+
+  # APIs defined for this project (link_name -> metadata)
+  apis:
+    - link_name: "Get_Dashboard_Summary"
+      display_name: "Get Dashboard Summary"
+      purpose: "Return aggregated claim statistics (pending/approved/rejected counts, amounts by dept)"
+      method: "POST"
+      request_params:
+        - ["department", "Text", "optional"]
+        - ["date_from", "Date", "optional"]
+        - ["date_to", "Date", "optional"]
+      response_fields:
+        - ["pending_count", "Number"]
+        - ["approved_count", "Number"]
+        - ["rejected_count", "Number"]
+        - ["total_amount_pending", "Decimal"]
+        - ["total_amount_approved", "Decimal"]
+
+    - link_name: "Get_Claim_Status"
+      display_name: "Get Claim Status"
+      purpose: "Query claim status by reference number for external systems"
+      method: "POST"
+      request_params:
+        - ["claim_reference", "Text", "required"]
+      response_fields:
+        - ["status", "Text"]
+        - ["amount_zar", "Decimal"]
+        - ["department", "Text"]
+        - ["category", "Text"]
+        - ["submitted_date", "Date"]
+        - ["last_action", "Text"]
+
+    - link_name: "Get_ESG_Summary"
+      display_name: "Get ESG Summary"
+      purpose: "Return carbon estimates and ESG category breakdowns for sustainability reporting"
+      method: "POST"
+      request_params:
+        - ["date_from", "Date", "optional"]
+        - ["date_to", "Date", "optional"]
+        - ["department", "Text", "optional"]
+      response_fields:
+        - ["total_carbon_kg", "Decimal"]
+        - ["claim_count", "Number"]
+
+    - link_name: "Get_SLA_Breaches"
+      display_name: "Get SLA Breaches"
+      purpose: "Return claims approaching or past SLA deadlines"
+      method: "POST"
+      request_params:
+        - ["threshold_days", "Number", "optional"]
+        - ["department", "Text", "optional"]
+      response_fields:
+        - ["breached_count", "Number"]
+        - ["at_risk_count", "Number"]
+
+# Linter rule classification (ForgeDS engine vs app-specific)
+# ForgeDS ships built-in "language" rules; app adds "project" rules via config.
+lint_rules:
+  # Language-level rules (ship with ForgeDS engine — Deluge syntax, not app-specific)
+  engine_rules:
+    - "DG001"   # Banned function call
+    - "DG002"   # Banned variable reference
+    - "DG003"   # hoursBetween in scheduled (platform limitation)
+    - "DG008"   # Single quotes for text
+    - "DG013"   # Mixed && and || without parens
+    - "DG017"   # Reserved word as variable
+    - "DG018"   # Unknown zoho system variable
+    - "DG019"   # Added_User with zoho.adminuserid
+    - "DG020"   # Custom API must build response Map
+    - "DG021"   # No form tasks in Custom API context
+
+  # App-specific rules (stay in ERM repo, loaded by ForgeDS at runtime)
+  app_rules:
+    - "DG004"   # Unknown input.FieldName (ERM field list)
+    - "DG005"   # Query result without null guard
+    - "DG006"   # Missing Added_User in approval_history
+    - "DG007"   # Wrong Added_User value
+    - "DG009"   # Colon in insert block
+    - "DG010"   # Missing sendmail/invokeUrl params
+    - "DG011"   # Unknown status value (ERM statuses)
+    - "DG012"   # Unknown action_1 value (ERM actions)
+    - "DG014"   # Threshold fallback value (ERM thresholds)
+    - "DG015"   # Hardcoded demo email (ERM domains)
+    - "DG016"   # Hardcoded email (info)
+
+# Script contexts (ForgeDS engine supports these; app defines which to use)
+script_contexts:
+  - "form-workflow"
+  - "approval-script"
+  - "scheduled"
+  - "custom-api"
+
+# Scaffold template classification
+scaffold:
+  # Generic templates (ship with ForgeDS — header, response map, error handling)
+  engine_templates:
+    - "header"
+    - "custom-api-boilerplate"
+
+  # App-specific templates (stay in ERM — business logic patterns)
+  app_templates:
+    - "audit-trail"
+    - "sendmail"
+    - "self-approval"
+    - "gl-lookup"
+    - "threshold-check"
+    - "same-person-check"
+
 # Seed data paths (relative to project root)
 seed_data_dir: "config/seed-data"
