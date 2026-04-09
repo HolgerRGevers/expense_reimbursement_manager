@@ -35,6 +35,10 @@ No CI/CD — Creator has no structural deployment API. Code is applied manually 
 - `Carbon_Factor` uses `ifnull(glRec.Carbon_Factor, 0)` — never assume GL record has ESG fields
 - `Estimated_Carbon_KG = input.amount_zar * carbonFactor` — calculated, not stored on GL account
 - `Compliance_Config` queries use `Config_Key == "KEY_NAME" && Active == true` pattern
+- Custom API scripts have NO `input.FieldName` — parameters come from the Custom API Builder request definition
+- Custom API scripts must return data via response Map, NOT `alert` or form actions
+- Custom API Link Name becomes the endpoint URL path segment
+- See `docs/zoho-custom-api-builder-research.md` for full Custom API Builder reference
 
 ## Tooling workflow
 After editing any .dg file:

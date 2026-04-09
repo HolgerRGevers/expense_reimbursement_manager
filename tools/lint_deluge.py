@@ -57,6 +57,7 @@ class FileType(str, Enum):
     FORM_WORKFLOW = "form-workflow"
     APPROVAL_SCRIPT = "approval-script"
     SCHEDULED = "scheduled"
+    CUSTOM_API = "custom-api"
 
 
 # ============================================================
@@ -186,12 +187,22 @@ class DelugeDB:
 # ============================================================
 
 def detect_file_type(filepath: str) -> FileType:
-    """Determine script context from file path."""
+    """Determine script context from file path or header comment."""
     normalized = filepath.replace("\\", "/")
     if "/scheduled/" in normalized:
         return FileType.SCHEDULED
     if "/approval-scripts/" in normalized:
         return FileType.APPROVAL_SCRIPT
+    if "/custom-api/" in normalized:
+        return FileType.CUSTOM_API
+    # Also check file header for context marker
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            head = f.read(512)
+        if "context: custom-api" in head.lower() or "custom api" in head.lower() and "microservices" in head.lower():
+            return FileType.CUSTOM_API
+    except (OSError, UnicodeDecodeError):
+        pass
     return FileType.FORM_WORKFLOW
 
 
@@ -501,6 +512,50 @@ def check_dg019(filename: str, line: str, lineno: int) -> list[Diagnostic]:
     return []
 
 
+CUSTOM_API_BANNED_TASKS = re.compile(
+    r"\b(alert\b|cancel\s+submit\b)", re.IGNORECASE,
+)
+
+
+def check_dg020(filename: str, lines: list[str], file_type: FileType) -> list[Diagnostic]:
+    """DG020: Custom API script should build a response Map."""
+    if file_type != FileType.CUSTOM_API:
+        return []
+    # Check if any line constructs a response map or uses Map()
+    has_response_map = False
+    for raw_line in lines:
+        if is_comment_line(raw_line):
+            continue
+        line = strip_comments(raw_line)
+        if re.search(r"\bMap\s*\(\s*\)", line) or re.search(r"\.put\s*\(", line):
+            has_response_map = True
+            break
+    if not has_response_map:
+        return [Diagnostic(
+            filename, 1, Severity.WARN, "DG020",
+            "Custom API script does not appear to build a response Map. "
+            "Custom APIs should construct a Map() response matching the Response step definition.",
+        )]
+    return []
+
+
+def check_dg021(
+    filename: str, line: str, lineno: int, file_type: FileType,
+) -> list[Diagnostic]:
+    """DG021: Form-specific tasks used in Custom API context."""
+    if file_type != FileType.CUSTOM_API:
+        return []
+    match = CUSTOM_API_BANNED_TASKS.search(line)
+    if match:
+        task = match.group(0).strip()
+        return [Diagnostic(
+            filename, lineno, Severity.ERROR, "DG021",
+            f"Form-specific task '{task}' used in Custom API context. "
+            "Custom APIs have no form context -- use response Map for error reporting.",
+        )]
+    return []
+
+
 def run_line_rules(
     db: DelugeDB, filename: str, lines: list[str], file_type: FileType,
 ) -> list[Diagnostic]:
@@ -515,7 +570,9 @@ def run_line_rules(
         diags.extend(check_dg001(db, filename, line, lineno))
         diags.extend(check_dg002(db, filename, line, lineno))
         diags.extend(check_dg003(filename, line, lineno, file_type))
-        diags.extend(check_dg004(db, filename, line, lineno))
+        # DG004 (input.FieldName check) -- skip for custom-api context (no input.X)
+        if file_type != FileType.CUSTOM_API:
+            diags.extend(check_dg004(db, filename, line, lineno))
         diags.extend(check_dg008(filename, line, lineno))
         diags.extend(check_dg011(db, filename, line, lineno))
         diags.extend(check_dg013(filename, line, lineno))
@@ -523,6 +580,10 @@ def run_line_rules(
         diags.extend(check_dg017(db, filename, line, lineno))
         diags.extend(check_dg018(db, filename, line, lineno))
         diags.extend(check_dg019(filename, line, lineno))
+        diags.extend(check_dg021(filename, line, lineno, file_type))
+
+    # File-level custom API check
+    diags.extend(check_dg020(filename, lines, file_type))
 
     return diags
 

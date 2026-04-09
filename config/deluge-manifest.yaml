@@ -122,3 +122,44 @@ scripts:
     event: scheduled
     context: scheduled
     includes: [audit-trail, sendmail]
+
+  # --- Custom APIs ---
+  # See docs/zoho-custom-api-builder-research.md for full reference.
+  # Custom APIs are not form-bound; they execute arbitrary Deluge logic
+  # and return structured responses via the Custom API Builder wizard.
+
+  - name: get_dashboard_summary
+    location: "Microservices > Custom API > Get_Dashboard_Summary"
+    trigger: "API call (REST/widget)"
+    purpose: "Return aggregated claim statistics (pending/approved/rejected counts, amounts by dept)"
+    form: null
+    event: api_execute
+    context: custom-api
+    includes: []
+
+  - name: get_claim_status
+    location: "Microservices > Custom API > Get_Claim_Status"
+    trigger: "API call (REST/widget)"
+    purpose: "Query claim status by reference number for external systems"
+    form: null
+    event: api_execute
+    context: custom-api
+    includes: []
+
+  - name: get_esg_summary
+    location: "Microservices > Custom API > Get_ESG_Summary"
+    trigger: "API call (REST/widget)"
+    purpose: "Return carbon estimates and ESG category breakdowns for sustainability reporting"
+    form: null
+    event: api_execute
+    context: custom-api
+    includes: []
+
+  - name: get_sla_breaches
+    location: "Microservices > Custom API > Get_SLA_Breaches"
+    trigger: "API call (REST/widget)"
+    purpose: "Return claims approaching or past SLA deadlines"
+    form: null
+    event: api_execute
+    context: custom-api
+    includes: []

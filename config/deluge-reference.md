@@ -428,6 +428,17 @@ if (thisapp.permissions.isUserInRole("Role Name"))
 - Field rules: client-side, instant UI updates
 - Workflows: server-side, run on form events (validate, success, edit)
 
+### Custom API scripts
+- Custom APIs are defined via the Custom API Builder wizard (Microservices > Custom API)
+- Scripts run in API context, NOT form context
+- No `input.FieldName` -- parameters come from the Request step definition
+- No `alert`, `cancel submit`, or other form-specific tasks
+- Must populate response keys matching the Response step definition
+- Can query any form/report, perform inserts/updates, call external services via `invokeUrl`
+- Authentication: Same OAuth 2.0 as REST API v2.1
+- **UNCERTAIN**: Exact parameter access and response construction syntax needs Creator verification
+- See `docs/zoho-custom-api-builder-research.md` for full reference
+
 ---
 
 ## 11. Style & Syntax Rules

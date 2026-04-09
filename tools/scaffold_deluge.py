@@ -193,14 +193,23 @@ def generate_self_approval_check(
     hod_email: str = '"hod.demo@yourdomain.com"',
 ) -> str:
     """Generate the self-approval prevention pattern."""
+    audit_block = generate_audit_trail(
+        action='"Submitted (Self-approval bypass)"',
+        comments='"Submitter holds Line Manager role. Routed directly to HoD."',
+    )
+    mail_block = generate_sendmail(
+        to=hod_email,
+        subject='"Expense Claim " + input.claim_id + " - Direct HoD Review"',
+        message='"Submitted by a Line Manager. Self-approval prevention engaged."',
+    )
     return (
         "// Self-Approval Prevention (King IV Principle 1)\n"
         'if (thisapp.permissions.isUserInRole("Line Manager"))\n'
         "{\n"
         '    input.status = "Pending HoD Approval";\n'
         "\n"
-        f"    {generate_audit_trail(action='\"Submitted (Self-approval bypass)\"', comments='\"Submitter holds Line Manager role. Routed directly to HoD.\"')}\n"
-        f"    {generate_sendmail(to=hod_email, subject='\"Expense Claim \" + input.claim_id + \" - Direct HoD Review\"', message='\"Submitted by a Line Manager. Self-approval prevention engaged.\"')}\n"
+        f"    {audit_block}\n"
+        f"    {mail_block}\n"
         "    return;\n"
         "}\n"
     )
@@ -222,6 +231,10 @@ def generate_gl_lookup() -> str:
 
 def generate_threshold_check() -> str:
     """Generate the threshold lookup + fallback pattern."""
+    fallback_audit = generate_audit_trail(
+        action='"Warning"',
+        comments='"Approval threshold config record not found. Using fallback R999.99."',
+    )
     return (
         "// Query threshold config table\n"
         'thresholdRec = approval_thresholds[tier_name == "Tier 1 - Line Manager" && Active == true];\n'
@@ -234,7 +247,7 @@ def generate_threshold_check() -> str:
         "else\n"
         "{\n"
         "    thresholdAmount = 999.99;\n"
-        f"    {generate_audit_trail(action='\"Warning\"', comments='\"Approval threshold config record not found. Using fallback R999.99.\"')}"
+        f"    {fallback_audit}"
         "}\n"
     )
 
@@ -242,6 +255,33 @@ def generate_threshold_check() -> str:
 # ============================================================
 # Scaffold assembly
 # ============================================================
+
+def generate_custom_api_boilerplate(name: str) -> str:
+    """Generate Custom API-specific boilerplate (request extraction, response map)."""
+    return (
+        "// --- Request Parameters ---\n"
+        "// Parameters are defined in the Custom API Builder wizard (Step 2: Request).\n"
+        "// Access them using the parameter names defined in the wizard.\n"
+        "// UNCERTAIN: Exact parameter access syntax needs Creator verification.\n"
+        "// Possible patterns:\n"
+        "//   paramValue = param.get(\"param_name\");\n"
+        "//   paramValue = crmAPIRequest.get(\"params\").get(\"param_name\");\n"
+        "\n"
+        "// --- Business Logic ---\n"
+        "// Query forms, compute values, call external services.\n"
+        "// No input.FieldName here -- this is API context, not form context.\n"
+        "// No alert or cancel submit -- use response map for error reporting.\n"
+        "\n"
+        "// TODO: Add business logic here\n"
+        "\n"
+        "// --- Build Response ---\n"
+        "// Response keys MUST match the Custom API Builder wizard (Step 3: Response).\n"
+        "// UNCERTAIN: Exact response construction syntax needs Creator verification.\n"
+        "// Possible pattern:\n"
+        "//   response = Map();\n"
+        "//   response.put(\"key_name\", value);\n"
+    )
+
 
 def scaffold_script(
     name: str,
@@ -263,9 +303,18 @@ def scaffold_script(
         parts.append("// Note: Uses thisapp.permissions.isUserInRole() - zoho.loginuserrole does NOT exist")
     elif context == "scheduled":
         parts.append("// Note: Uses daysBetween (not hoursBetween) due to Free Trial daily-only schedule constraint")
+    elif context == "custom-api":
+        parts.append("// Note: Custom API context -- no input.FieldName, no alert, no cancel submit.")
+        parts.append("// See docs/zoho-custom-api-builder-research.md for reference.")
     parts.append("")
 
-    # Optional boilerplate sections
+    # Custom API gets its own boilerplate instead of the form-oriented includes
+    if context == "custom-api":
+        parts.append(generate_custom_api_boilerplate(name))
+        parts.append("")
+        return "\n".join(parts)
+
+    # Optional boilerplate sections (form/approval/scheduled contexts)
     if "threshold-check" in includes:
         parts.append(generate_threshold_check())
         parts.append("")
@@ -312,7 +361,7 @@ def main() -> None:
     parser.add_argument("--trigger", default="", help="Trigger event (for new scripts)")
     parser.add_argument("--purpose", default="", help="One-line purpose (for new scripts)")
     parser.add_argument("--context", default="form-workflow",
-                        choices=["form-workflow", "approval-script", "scheduled"],
+                        choices=["form-workflow", "approval-script", "scheduled", "custom-api"],
                         help="Script context type")
     parser.add_argument("--include", default="",
                         help="Comma-separated boilerplate: audit-trail,sendmail,self-approval,gl-lookup,threshold-check")

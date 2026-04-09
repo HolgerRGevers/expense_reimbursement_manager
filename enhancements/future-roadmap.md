@@ -28,6 +28,23 @@ The import pipeline is built and tested in mock mode. Next step is live API inte
 
 The tooling (`tools/upload_to_creator.py`) runs in mock mode by default. Add `--live` when API credentials are configured in `config/zoho-api.yaml`.
 
+## Near-Term: Custom API Builder Exploration
+
+Zoho Creator's Custom API Builder (Microservices > Custom API) allows defining custom REST endpoints backed by Deluge scripts. Unlike the REST API v2.1 (fixed CRUD), Custom APIs execute arbitrary logic and return user-defined JSON responses.
+
+**Research completed** — see `docs/zoho-custom-api-builder-research.md` for full reference.
+
+**Priority use cases identified**:
+- **Get_Dashboard_Summary** — aggregated claim stats for external dashboards (High)
+- **Get_Claim_Status** — external systems query claim status by reference number (High)
+- **Get_ESG_Summary** — carbon/ESG data feed for sustainability reporting (Medium)
+- **Get_SLA_Breaches** — proactive SLA management (Medium)
+- **Create_Journal_Entry** — Zoho Books integration endpoint (Medium)
+
+**Tooling support added**: `custom-api` context in manifest, scaffold, and linter (DG020/DG021).
+
+**Next step**: Create a test Custom API (`Test_Ping`) in Creator UI to verify endpoint URL format, parameter access syntax, and response construction. Requires Standard plan or above.
+
 ## Near-Term: Hardcoded Email Remediation (G-05)
 
 The last open governance gap -- 8 hardcoded demo email addresses across 6 `.dg` files need replacement with a config-table-based lookup or role-based email resolution. Options:
