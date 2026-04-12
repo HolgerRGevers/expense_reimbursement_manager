@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.0] - 2026-04-12
+
+### Added
+- International standards alignment: ISSB IFRS S1/S2, GRI 205/301/302/305, ISO 26000, ISO 37000, ISSA 5000
+- ESG tracking: GL accounts carry ESG_Category and Carbon_Factor; approved claims carry Estimated_Carbon_KG
+- Compliance_Config form: org-type-specific controls (PRIVATE, JSE_LISTED, SOE, MULTINATIONAL)
+- Sustainability Dashboard page with ESG reporting components
+- `ds_editor.py apply-esg` subcommand for programmatic ESG schema deployment
+- Compliance documentation: international-standards-mapping.md, esg-reporting-guide.md, companies-act-alignment.md
+- Custom API Builder research (docs/zoho-custom-api-builder-research.md) with 5 priority APIs defined
+- Linter rules DG020 (Custom API must build response Map) and DG021 (no form tasks in Custom API context)
+- Scaffold `custom-api` context with response Map boilerplate
+- ForgeDS extraction guide (docs/forgeds-extraction-guide.md) and forgeds.yaml project config
+- Discovery log entry DL-007: Custom API Builder initial research
+
+### Changed
+- Linter expanded from 20 to 21 rules (DG001-DG021)
+- Scaffold supports 4 contexts: form-workflow, approval-script, scheduled, custom-api
+- Enhancement specs updated to reflect completed features (Two-Key, Import Pipeline, ESG)
+- Seed data: gl_accounts.json now includes ESG_Category and Carbon_Factor fields
+- Seed data: compliance_config.json added (8 configuration entries)
+
+## [0.6.0] - 2026-04-07
+
+### Added
+- Access-to-Zoho import pipeline: export_access_csv.py, validate_import_data.py, upload_to_creator.py
+- Hybrid cross-environment linter (lint_hybrid.py): 14 rules validating Access-to-Zoho integration
+- Access/VBA language database (build_access_vba_db.py): 12 tables, 505 rows
+- Access SQL linter (lint_access.py): 8 rules (AV001-AV008)
+- Access database builder (build_access_db.py): creates .accdb with seed data
+- Mock data generator (generate_mock_data.py): 7 personas, 175 claims, Two-Key approval paths
+- Lindiwe Mahlangu persona for Two-Key dual-approval testing
+- Import documentation: access-to-zoho-import-guide.md, type-mapping-reference.md, api-upload-guide.md
+- Mapping seed data extracted to JSON: type_mappings.json, field_name_mappings.json, access_table_fields.json
+
+### Changed
+- Two-Key threshold authorization fully implemented:
+  - 3-tier approval: LM (R999.99) -> HoD (R10,000) -> Finance Director (R5,000+ Two-Key)
+  - finance_approval.on_approve.dg and finance_approval.on_reject.dg scripts
+  - hod_approval.on_approve.dg expanded with Two-Key routing and ESG population
+  - sla_enforcement_daily.dg expanded with Key 2 SLA enforcement loop
+  - expense_claim.on_edit.dg clears dual-approval fields on resubmission
+  - ds_editor.py apply-two-key subcommand for programmatic .ds deployment
+  - Key_1_Approver, Key_1_Timestamp, Key_2_Approver, Key_2_Timestamp tracking fields
+  - approval_thresholds.json: 3 tiers with Requires_Dual_Approval flag
+- Deluge scripts expanded from 11 to 13 (693 LOC)
+- Employee Dashboard redesigned with native Zoho Creator components
+- Tool names consolidated with first-principles naming
+
 ## [0.5.0] - 2026-04-07
 
 ### Added
