@@ -6,7 +6,7 @@ Zoho Creator application for governance-first expense reimbursement with South A
 
 **7 forms** | **13 Deluge scripts** | **44 linter rules** | **SA compliance built-in**
 
-[![Download App Definition (.ds)](https://img.shields.io/badge/Download_.ds_File-22c55e?style=for-the-badge&logo=zoho&logoColor=white&labelColor=166534)](https://github.com/HolgerRGevers/expense_reimbursement_manager/raw/main/exports/Expense_Reimbursement_Management-stage.ds)
+[![Download App Definition (.ds)](https://img.shields.io/badge/Download_.ds_File-22c55e?style=for-the-badge&logo=zoho&logoColor=white&labelColor=166534)](https://github.com/holgergevers-hub/Expense_Reimbursement_Manager/releases/download/v1.0.0/Expense_Reimbursement_Management-stage.ds)
 
 </div>
 
@@ -16,7 +16,7 @@ Zoho Creator application for governance-first expense reimbursement with South A
 
 ### Option A: Import the .ds file
 
-1. Download [**Expense_Reimbursement_Management-stage.ds**](https://github.com/HolgerRGevers/expense_reimbursement_manager/raw/main/exports/Expense_Reimbursement_Management-stage.ds) -- contains all 7 forms, fields, reports, and permissions in one file
+1. Download [**Expense_Reimbursement_Management-stage.ds**](https://github.com/holgergevers-hub/Expense_Reimbursement_Manager/releases/download/v1.0.0/Expense_Reimbursement_Management-stage.ds) -- contains all 7 forms, fields, reports, and permissions in one file
 2. In Zoho Creator: **Settings > Import Application > Upload .ds file**
 3. Import the seed data:
 
