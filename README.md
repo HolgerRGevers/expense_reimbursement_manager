@@ -152,6 +152,13 @@ tests/                Linter test fixtures (.dg, .sql)
 - ForgeDS (for linting and deployment)
 - pyodbc + Microsoft Access Driver (Windows only, for `.accdb` operations)
 
+## Skills Journey
+
+This repository is **Phase 1** of a development journey that began with a
+Zoho Creator assessment and grew into five repositories, a mathematical
+framework, and a C runtime. See the
+[full narrative](https://github.com/holgergevers-hub/Portfolio) for context.
+
 ## License
 
 [MIT](LICENSE)
