@@ -4,7 +4,11 @@ This folder contains the **canonical deployment file** for the Zoho Creator appl
 
 ## Current Version
 
-**`Expense_Reimbursement_Management-stage.ds`** -- Import this file into Zoho Creator to deploy the app.
+**[`Expense_Reimbursement_Management-stage.ds`](./Expense_Reimbursement_Management-stage.ds)** -- Import this file into Zoho Creator to deploy the app.
+
+## Historic Version
+
+**[`Expense_Reimbursement_Management-stage.v0.4.0-16067d6.historic.ds`](./Expense_Reimbursement_Management-stage.v0.4.0-16067d6.historic.ds)** -- v0.4.0 snapshot (commit `16067d6`), the last verified-good baseline two `.ds` steps before v0.5.0 first broke Creator import. Reference-only; do not deploy.
 
 ## How to deploy
 

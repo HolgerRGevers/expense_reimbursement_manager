@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../ForgeDS"
+		}
+	],
+	"settings": {
+		"claudeCodeChat.permissions.yoloMode": true
+	}
+}
