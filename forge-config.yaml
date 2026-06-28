@@ -1,0 +1,51 @@
+# forge-config.yaml — Expense_Reimbursement_Manager
+# Zoho Creator + Deluge expense system (LM → HoD → FD, dual-key segregation, SARS/King IV).
+# Consumed by the forgeplan skill (~/.claude/skills/forgeplan) at run start.
+
+commit_scope: erm
+branch_prefix: forgeplan/erm/
+
+trivial_keywords:
+  - smoke test
+  - seed thresholds
+  - tier routing
+  - sla escalate
+  - re-route resubmit
+  - export ds
+
+domain_gotchas: |
+  Deluge field references are case-sensitive: if .ds defines `amount_zar`, Deluge must
+  use `input.amount_zar`, NOT `input.Amount_ZAR`. Zoho Creator treats these as different
+  fields — silent bug, no error.
+
+  approval_history is append-only and immutable: every state transition writes here.
+  Edit / Delete / Duplicate / Export must be disabled at MENU level on this form (not
+  just role-gated) to enforce tamper-proof compliance per BR-004 and BR-023.
+
+  Self-approval bypass uses INTERNAL role membership: check via
+  `thisapp.permissions.isUserInRole("Line Manager")` against Users & Control → Roles,
+  NOT portal roles. Portal-role check silently never fires (no error, rule just never
+  matches).
+
+  Dual-key segregation (Key 1 ≠ Key 2) is security-critical: enforced at BOTH Deluge
+  level AND form-validation level (belt-and-braces, King IV Principle 7). Same-person
+  approval is blocked and emits a governance alert.
+
+  Thresholds are config-driven (rows in `approval_thresholds`): Tier 1 = R999.99,
+  Tier 2 = R10,000, Dual = R100,000. The `tier_name` column is the lookup key — renaming
+  a row requires updating every Deluge `tier_name ==` comparison in lockstep.
+
+  New forms must be inserted INSIDE the `forms { }` block, before its closing `}`.
+  Forms at the application level are silently rejected by Zoho Creator.
+
+  Report filters use bracket syntax: `show all rows from x [filter_expr]`, NOT
+  `where (filter_expr)`.
+
+integrity:
+  rebuttal:
+    max_cycles: 2
+    critic_tier: capable   # financial-control specs warrant capable critic
+
+safety:
+  require_opus_session: warn
+  forbid_auto_on_deploy: true

@@ -1,0 +1,10 @@
+Zoho Creator app: Expense Reimbursement Management. ZAR, Africa/Johannesburg. Six forms:
+
+1. departments(name, active)
+2. clients(name, active)
+3. gl_accounts(gl_code, account_name, expense_category:picklist, receipt_required:bool, risk_level:picklist, active)
+4. approval_thresholds(tier_name, max_amount_zar:decimal, approver_role, tier_order:int, requires_dual_approval:bool, dual_threshold_zar:decimal)
+5. expense_claims(employee_name, email, submission_date:datetime, claim_id:auto, department>departments, client>clients, expense_date:date, category:picklist, amount_zar:decimal, supporting_documents:file, description:textarea, vat_invoice_type:picklist, popia_consent:bool, status:picklist, rejection_reason:textarea, version:int, gl_code>gl_accounts)
+6. approval_history(claim>expense_claims, action:picklist, actor, timestamp:datetime, comments:textarea)
+
+">" = lookup. Approval: LM<R1000; HoD R1000-R5000; dual-key Finance Director >R5000. 3-day SLA. POPIA. 5yr SARS retention.
