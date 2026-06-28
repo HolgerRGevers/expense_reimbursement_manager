@@ -47,3 +47,5 @@ build/
 
 # Machine-local Claude Code config (host-specific permissions/mode; never share) — HK-FILE / settings.local
 .claude/settings.local.json
+# Machine-local Claude Code config (host-specific permissions/mode; never share)
+.claude/settings.local.json
