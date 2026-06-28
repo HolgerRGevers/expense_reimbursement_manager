@@ -1,0 +1,763 @@
+# Expense Reimbursement Management — Business Requirements Document for Zoho Zia
+
+**Document ID**: zia-brd-2026-04-24-plan-b
+**Status**: Phase 7 Plan B
+
+---
+
+## Plan B — Revision notes (2026-04-24)
+
+Derived from Plan A via ground-truth diff against Zia's first-round output. Changes: C1 strip currency types; C2 sanitize picklist parens/commas; C3 link_name callout; C4 timezone emphasis; C5 file-upload directive; C6 lookup displayformat; C7 split shared category picklist; C8 closed-picklist directive; C9 demote CRUD matrix; C10 compress workflow catalog. See `docs/superpowers/research/2026-04-24-erm-brd/5-zia-diff.md` for the fidelity analysis driving these changes.
+
+---
+
+## §1 Ingestion Contract
+
+> **⚠ Required application timezone: `Africa/Johannesburg` (SAST, GMT+2).** Do not default to any other timezone. All `date time` fields are stamped in this zone.
+
+
+  Reconstruct every artifact listed in §16; treat every table row
+  as a schema directive.
+```
+
+Reconstruct every artifact listed in §16 using the form, field, report, role, workflow, and email-template tables in this document as schema directives.
+
+---
+
+## §2 Application Meta
+
+All monetary amounts stored as decimal numbers; ZAR currency formatting applied post-import.
+
+| Property | Value |
+|---|---|
+| Display Name | Expense Reimbursement Management |
+| Link Name | expense_reimbursement_management |
+| Author | holger.gevers360 |
+| Version | 1.0 |
+| Generated | 06-Apr-2026 13:04:52 |
+| Currency | ZAR |
+| Timezone | Africa/Johannesburg |
+| Date Format | dd-MMM-yyyy |
+| Time Format | 24-hr |
+| Forms | 6 |
+| Fields | 53 |
+| Lookups | 5 |
+| Subforms | 0 |
+| Reports | 11 (9 list + 1 kanban + 1 pivottable) |
+| Status Values | 9 |
+| Roles | 7 internal + 3 portal (see §9.1) |
+| Workflows | 13 |
+| Custom APIs | 4 |
+| Email Templates | 18 (named) + 1 inline ad-hoc (see §15) |
+| Widgets | 0 |
+| Named Picklists | 6 |
+
+---
+
+## §3 Glossary & Notation Legend
+
+### Type notation
+
+| Symbol | Meaning | Example |
+|---|---|---|
+| `lookup→<form>` | Foreign-key lookup to named form | `lookup→expense_claims` |
+| `self_ref→<form>` | Self-referential lookup | `self_ref→expense_claims` |
+| `fx:"<expr>"` | Computed/formula field value | `fx:"zoho.currenttime + 5y"` |
+| `@Picklist:<name>` | Reference to named picklist in §7 | `pick list @Picklist:expense_category_claim` |
+| `pick{a,b,c}` | Inline picklist (≤3 values, single-use) | `pick list pick{Standard,High}` |
+| `pick list (users-module)` | Pick list bound to Zoho Users module | `pick list (users-module)` |
+| `pick list (self-ref)` | Pick list referencing own form records | `pick list (self-ref)` |
+
+### Flag string
+
+| Symbol | Meaning | Example |
+|---|---|---|
+| `*` | Required (must have) | flags cell: `*` |
+| `‡` | Unique | flags cell: `‡` |
+| `†` | Private / hidden from default UI | flags cell: `†` |
+| `—` | Empty / not applicable | any empty cell |
+
+### CRUD cell alphabet
+
+| Symbol | Meaning | Example |
+|---|---|---|
+| `C R U D` | CRUD record-level access letters | `CRU` = create+read+update |
+| `¹²³` | Scope qualifier footnote | `R¹` = read scoped per footnote 1 |
+
+### Reads / Writes micro-syntax
+
+```
+Reads:  semi-separated tokens — input.<field>; zoho.<var>; <form>[<filter>].<field>
+        Multi-field pull: <form>[<filter>].(field1,field2,field3)
+Writes: semi-separated assignments — input.<field> := <value>
+        Arrow shorthand also accepted: input.<field> → <value>
+```
+
+### State machine transition row format
+
+```
+from_status | trigger | condition (guard) | to_status | actor_role | workflow_ref (→ WF-NN)
+```
+
+### Email template contract
+
+```
+Subject column: literal template string with {{var}} tokens.
+Variables column: comma-separated {{var}} names.
+Body prose: omitted. intent column is one sentence only.
+```
+
+> **Field identifiers.** The `link_name` column in every §6 field table is the PROGRAMMATIC identifier (used in Deluge scripts, API calls, form references). This MUST be preserved exactly as written — do not rename, do not convert to snake_case differently, do not prepend/append tokens. The `label` column is the human-readable display name ONLY. When link_name and label differ, always prefer link_name for any programmatic binding.
+
+> **Closed picklists.** All pick-list fields in this BRD are CLOSED enumerations. Users may only select from the values listed. Do NOT add an "Others" option or allow free-text entry on any pick-list field.
+
+---
+
+## §4 Entity Catalog
+
+| form | label | kind | purpose | key_field | fk_to | row_count_class |
+|---|---|---|---|---|---|---|
+| departments | Departments | ref | Lookup reference table of organizational departments. | department_id | — | small |
+| clients | Clients | ref | Lookup reference table of clients for expense association. | client_id | — | small |
+| gl_accounts | GL Accounts | ref | Maps GL codes to expense categories, SARS provisions, and risk levels. | gl_code | — | small |
+| approval_thresholds | Approval Thresholds | config | Configuration table defining tiered approval limits and dual-key rules. | tier_name | — | small |
+| expense_claims | Expense Claims | txn | One record per employee expense reimbursement claim moving through multi-tier approval. | claim_id | departments, clients, gl_accounts, self (Parent_Claim_ID) | large |
+| approval_history | Approval History | audit | Append-only audit log of every action taken on a claim during approval workflow. | claim | expense_claims | medium |
+
+---
+
+## §5 Entity-Relationship Skeleton
+
+| from_form | field | to_form | cardinality | on_delete | self_ref |
+|---|---|---|---|---|---|
+| approval_history | claim | expense_claims | N:1 | — | — |
+| expense_claims | department | departments | N:1 | — | — |
+| expense_claims | client | clients | N:1 | — | — |
+| expense_claims | gl_code | gl_accounts | N:1 | — | — |
+| expense_claims | Parent_Claim_ID | expense_claims | N:1 | — | yes |
+
+---
+
+## §6 Form Catalog
+
+### 6.1 departments — Departments
+
+Lookup reference table of organizational departments available for selection on expense claims.
+
+| link_name | label | type | flags | default | ref/pick | help |
+|---|---|---|---|---|---|---|
+| department_id | Department ID | auto number | — | autonumber(1) | — | Auto-generated department identifier. |
+| name | Name | text | — | — | — | Department name as it appears in dropdown selections. |
+| is_active | Active | boolean | — | true | — | Whether this department is currently active and available for selection. |
+
+**Form-level rules**: none.
+
+---
+
+### 6.2 clients — Clients
+
+Lookup reference table of clients available for selection on expense claims.
+
+| link_name | label | type | flags | default | ref/pick | help |
+|---|---|---|---|---|---|---|
+| client_id | Client ID | auto number | — | autonumber(1) | — | Auto-generated client identifier. |
+| name | Name | text | — | — | — | Client name as it appears in dropdown selections. |
+| is_active | Active | boolean | — | true | — | Whether this client is currently active and available for selection. |
+
+**Form-level rules**: none.
+
+---
+
+### 6.3 gl_accounts — GL Accounts
+
+Reference table mapping General Ledger account codes to expense categories, SARS provisions, and risk levels.
+
+| link_name | label | type | flags | default | ref/pick | help |
+|---|---|---|---|---|---|---|
+| gl_code | GL Code | text | — | — | — | The General Ledger account code (e.g., 6200). Must match your accounting system. |
+| account_name | Account Name | text | — | — | — | Descriptive name for this GL account (e.g., Travel - Local Transport). |
+| expense_category | Expense Category | pick list | — | — | @Picklist:expense_category_gl | The expense category this GL code maps to. Used for auto-assignment during approval. |
+| receipt_required | Receipt Required | boolean | — | true | — | Whether a receipt/invoice is required for expenses in this category. Default: Yes (SARS S11(a)). |
+| SARS_Provision | SARS Provision | text | — | — | — | Maps each GL code to SARS deduction provision, e.g. "S11(a) plus S8(1)(a)". |
+| Risk_Level | Risk Level | pick list | — | Standard | @Picklist:Risk_Level | ISO 37001: Categories prone to bribery risk receive enhanced scrutiny. |
+| Active | Active | boolean | — | true | — | Whether this GL code is currently available for assignment. |
+
+**Form-level rules**: none. Referenced by WF-07, WF-09. ESG fields (ESG_Category, Carbon_Factor, GRI_Indicator) are NOT declared in this form — see §15 discrepancy 7.
+
+---
+
+### 6.4 approval_thresholds — Approval Thresholds
+
+Configuration table defining tiered approval limits and dual-key authorization rules for the workflow.
+
+| link_name | label | type | flags | default | ref/pick | help |
+|---|---|---|---|---|---|---|
+| tier_name | Tier Name | text | — | — | — | Name of the approval tier (e.g., Tier 1 - Line Manager). |
+| max_amount_zar | Max Amount ZAR | number | — | — | — | Maximum claim amount (2 decimal places, stored in ZAR) this tier can approve; claims above escalate to next tier. |
+| approver_role | Approver Role | text | — | — | — | The Zoho Creator role that approves claims at this tier. |
+| Active | Active | boolean | — | true | — | Whether this threshold tier is currently active in the approval workflow. |
+| Tier_Order | Tier Order | number | — | 0 | — | Numeric order in escalation chain; lower numbers approve first. |
+| Requires_Dual_Approval | Requires Dual Approval | boolean | — | false | — | Whether this tier triggers dual-approval (two-key) authorization. |
+| Dual_Approval_Role | Dual Approval Role | text | — | — | — | Role that acts as Key 2 approver when dual-approval is required. |
+| Dual_Threshold_ZAR | Dual Threshold ZAR | number | — | — | — | Amount threshold (2 decimal places, stored in ZAR) above which dual-approval is required. |
+
+**Form-level rules**: none (configuration form). Referenced by WF-07, WF-09, WF-13.
+
+---
+
+### 6.5 expense_claims — Expense Claims
+
+Core transaction form; each record is one employee expense reimbursement claim moving through the multi-tier approval workflow.
+
+| link_name | label | type | flags | default | ref/pick | help |
+|---|---|---|---|---|---|---|
+| Employee_Name1 | Employee Name | name (compound) | * | — | pick{Mr.,Mrs.,Ms.} (prefix sub-component, hidden) | Your full name as registered in the system. Auto-populated on form load. |
+| Email | Email | pick list (users-module) | * | — | users-module | Notification routing target. |
+| Submission_Date | Submission Date | date time | * | — | — | Date and time the claim was submitted. Set automatically. |
+| claim_id | Claim ID | auto number | — | autonumber(1) | — | System-generated unique claim number. |
+| department | Department | lookup→departments displayformat=[name] | — | — | lookup→departments | Select your department. |
+| Claim_Reference | Claim Reference | text | * | — | — | Auto-generated reference (EXP-0001 format). |
+| client | Client | lookup→clients displayformat=[name] | — | — | lookup→clients | Select the client this expense relates to. |
+| Expense_Date | Expense Date | date | — | — | — | Date the expense was incurred. Cannot be in the future or older than 90 days. |
+| Department_Shadow | Department Shadow | text | † | — | — | — |
+| category | Category | pick list | — | — | @Picklist:expense_category_claim | Select the expense category. Determines GL code mapping and VAT requirements. |
+| Client_Shadow | Client Shadow | text | † | — | — | — |
+| amount_zar | Amount ZAR | number | — | — | — | Total expense amount (2 decimal places, stored in ZAR). Must be greater than zero. |
+| Supporting_Documents | Supporting Documents | file upload | * | — | — | Upload receipts or invoices. Required by SARS S11(a). Max 10 files. File-upload field type — Zia may skip during auto-generation. If absent post-import, add manually with max 10 attachments. |
+| description | Description | rich text (textarea) | — | — | — | Describe the business purpose of this expense. Required for SARS S11(a) substantiation. |
+| VAT_Invoice_Type | VAT Invoice Type | pick list | — | — | @Picklist:VAT_Invoice_Type | Claims >= R5000 require a Full Tax Invoice per SARS VAT rules. |
+| POPIA_Consent | POPIA Consent | boolean | — | false | — | I consent to the processing of my personal data for expense reimbursement purposes in accordance with POPIA. |
+| status | Status | pick list | — | — | @Picklist:status | Current claim status. Updated automatically by the approval workflow. |
+| Rejection_Reason | Rejection Reason | rich text (textarea) | — | — | — | Reason for rejection, provided by the approver. Read-only for employees. |
+| Version | Version | number | — | 1 | — | Claim version number. Incremented each time the claim is resubmitted after rejection. |
+| Retention_Expiry_Date | Retention Expiry Date | date | † | — | — | SARS Tax Administration Act S29: 5-year retention from submission date. |
+| Parent_Claim_ID | Parent Claim ID | pick list (self-ref) | † | — | self_ref→expense_claims | Self-referential: stores ID of the parent claim this record amends; .ds type is pick list filtered to expense_claims.ID. |
+| gl_code | GL Code | lookup→gl_accounts displayformat=[gl_code] | — | — | lookup→gl_accounts | General Ledger code assigned during approval. |
+| Requires_Dual_Approval | Requires Dual Approval | boolean | † | false | — | — |
+| Key_1_Approver | Key 1 Approver | text | † | — | — | — |
+| Key_1_Timestamp | Key 1 Timestamp | date time | † | — | — | — |
+| Key_2_Approver | Key 2 Approver | text | † | — | — | — |
+| Key_2_Timestamp | Key 2 Timestamp | date time | † | — | — | — |
+
+**Form-level rules**:
+1. BR-012: Expense_Date must not be in the future.
+2. BR-010: Expense_Date must not be older than 90 days.
+3. BR-011: amount_zar must be > 0.
+4. BR-006: Supporting_Documents must not be null (SARS S11(a) substantiation).
+5. BR-019: Duplicate detection — same employee, date, and amount triggers a warning.
+6. BR-007: Claims >= R5000 require VAT_Invoice_Type = "Full Tax Invoice - R5000 and above".
+7. BR-008: POPIA_Consent must be true before submission.
+
+---
+
+### 6.6 approval_history — Approval History
+
+Append-only audit log recording every action taken on an expense claim during the approval workflow.
+
+| link_name | label | type | flags | default | ref/pick | help |
+|---|---|---|---|---|---|---|
+| claim | Claim | lookup→expense_claims displayformat=[claim_id] | — | — | lookup→expense_claims | The expense claim this audit record relates to. |
+| action_1 | Action | pick list | — | — | @Picklist:action_1 | The action taken: Submitted, Approved (LM/HoD), Rejected, Escalated, or Resubmitted. |
+| actor | Actor | text | — | — | — | The person or system that performed the action. |
+| timestamp | Timestamp | date time | — | — | — | Date and time the action was recorded. |
+| comments | Comments | rich text (textarea) | — | — | — | Details about the action, including amounts, GL codes, or rejection reasons. |
+
+**Form-level rules**: none (audit form; append-only posture enforced at menu/report layer — see BR-023 and §16 #13).
+
+---
+
+## §7 Picklist Appendix
+
+### action_1
+
+```
+Submitted
+Submitted (Self-approval bypass)
+Approved (LM)
+Approved (HoD)
+Approved (Key 1)
+Approved (Key 2)
+Rejected
+Rejected (Key 2)
+Reconsidered (Key 1)
+Escalated (SLA Breach)
+Resubmitted
+Warning
+```
+
+Closed picklist — no others option. Used by: `approval_history.action_1`
+
+---
+
+### expense_category_claim
+
+```
+Travel
+Accommodation
+Meals and Entertainment
+Office Supplies
+Communication
+Professional Services
+Other
+```
+
+Closed picklist — no others option. Used by: `expense_claims.category`
+
+---
+
+### expense_category_gl
+
+```
+Travel
+Accommodation
+Meals and Entertainment
+Office Supplies
+Communication
+Professional Services
+Other
+```
+
+Closed picklist — no others option. Used by: `gl_accounts.expense_category`
+
+---
+
+### Risk_Level
+
+```
+Standard
+Elevated
+High
+```
+
+Default: Standard. Closed picklist — no others option. Used by: `gl_accounts.Risk_Level`
+
+---
+
+### status
+
+```
+Draft
+Submitted
+Pending LM Approval
+Pending HoD Approval
+Pending Second Key
+Key 2 Dispute
+Approved
+Rejected
+Resubmitted
+```
+
+Closed picklist — no others option. Used by: `expense_claims.status`
+
+---
+
+### VAT_Invoice_Type
+
+```
+None
+Abbreviated Tax Invoice - under R5000
+Full Tax Invoice - R5000 and above
+```
+
+Closed picklist — no others option. Used by: `expense_claims.VAT_Invoice_Type`
+
+---
+
+## §8 Reports Catalog
+
+| name | display_name | source_form | view_type | filter | sort | columns | grouping | cond_format | menu_perms |
+|---|---|---|---|---|---|---|---|---|---|
+| expense_claims_Report | All Expense Claims | expense_claims | list | — | — | claim_id, department, client, category, amount_zar (total/avg/min/max), description, status, gl_code | — | status:Approved=#1bbc9b; status:Rejected=#e84c3d; status:Pending LM Approval=#bd588b; status:Pending HoD Approval=#bd588b; category:Meals and Entertainment=#765f89; status:Escalated (SLA Breach)=#107c91 | Edit+View |
+| gl_accounts_Report | All Gl Accounts | gl_accounts | list | — | — | gl_code, account_name, expense_category, receipt_required | — | expense_category:Meals and Entertainment=#765f89 | View |
+| gl_accounts_by_expense_category | Expense Categories | gl_accounts | kanban | — | — | gl_code, account_name, expense_category, receipt_required | — | — | View |
+| approval_history_Report | All Approval Histories | approval_history | list | — | — | claim, action_1, actor, timestamp, comments | — | action_1:Approved (LM)=#1bbc9b; action_1:Approved (HoD)=#1bbc9b; action_1:Rejected=#e84c3d; action_1:Submitted=#bd588b | View |
+| approval_thresholds_Report | All Approval Thresholds | approval_thresholds | list | — | — | tier_name, max_amount_zar (total/avg/min/max), approver_role | — | — | View |
+| clients_Report | All Clients | clients | list | — | — | client_id, name, is_active | — | — | View |
+| departments_Report | All Departments | departments | list | — | — | department_id, name, is_active | — | — | View |
+| Audit_Trail | Audit Trail | approval_history | list | — | timestamp asc | claim, action_1, actor, timestamp, comments, claim.claim_id | — | — | View |
+| pending_approvals_manager | Pending Approvals Manager | expense_claims | list | [status == "Pending LM Approval" \|\| status == "Pending HoD Approval"] | Submission_Date asc | (see sub-list below) | group by status, Department_Shadow, Employee_Name1, category | status:Pending LM Approval=#bd588b; status:Pending HoD Approval=#765f89 | Edit+View |
+| My_Claims | My Claims | expense_claims | list | [Added_User == zoho.loginuser] | Submission_Date desc | (see sub-list below) | group by claim_id, Expense_Date, Submission_Date, category, amount_zar, status, Version | status:Approved=#1bbc9b; status:Rejected=#e84c3d; status:Pending LM Approval=#bd588b; status:Pending HoD Approval=#bd588b; status:Resubmitted=#107c91 | Edit+View |
+| Expense_Summary | Expense Summary | expense_claims | pivot | — | — | Email, Submission_Date, claim_id, Parent_Claim_ID.Department_Shadow, Client_Shadow, category, amount_zar, status | — | — | View |
+
+**pending_approvals_manager columns** (18 fields): Employee_Name1, Email, Submission_Date, claim_id, Claim_Reference, Expense_Date, department, client, category, amount_zar (total/avg/min/max), Supporting_Documents, description, status, Rejection_Reason, Version, Parent_Claim_ID, gl_code, Department_Shadow
+
+**My_Claims columns** (17 fields): Employee_Name1, Email, Submission_Date, claim_id, Claim_Reference, Expense_Date, department, client, category, amount_zar, Supporting_Documents, description, status, Rejection_Reason, Version, Parent_Claim_ID, gl_code
+
+---
+
+## §9 Roles & Access Model
+
+### 9.1 Role Definitions
+
+Role names and intent are listed below. Detailed CRUD permissions and field-level overrides will be configured post-import via Zoho Creator's role editor — this BRD does not specify them here.
+
+| role | parent | kind | purpose | notes |
+|---|---|---|---|---|
+| Employee | — | internal | Base role for all staff submitting expense claims. | Self-approval prevention applies; can only view own claims. |
+| Line Manager | Employee | internal | Stage 1 approval up to R999.99; SLA-bound. | Self-approval prevention: LM submitters bypass own tier. |
+| Head of Department | Line Manager | internal | Stage 2 approval; Key 1 dual-approval authority. | Final authority under dual-threshold; oversees LM SLA compliance. |
+| Finance Director | — | internal | Key 2 dual-approval authority for high-value claims. | Cannot be same person as Key 1 (King IV P7 segregation of duties). |
+| Finance Accountant | — | internal | GL account management, exports, audit access. | Full GL CRUD; read-all on claims; no approval authority. |
+| System Administrator | — | internal | Full system control across all forms. | Full CRUD + import/export everywhere. |
+| Developer | — | internal | Development access for configuration and testing. | Read-only on all forms; no approval or admin authority. |
+| Client Representative | — | portal | External client portal access to view claims. | View only; no edit or approval. |
+| Vendor | — | portal | External vendor portal access to view claims. | View only; no edit or approval. |
+| Customer | — | portal | Default portal profile. | Default portal permissions. |
+
+---
+
+## §10 Workflow State Machine
+
+### Status Enumeration
+
+- **Draft** — pre-submission UI state; no workflow transitions lead back to Draft.
+- **Submitted** — claim has passed on_validate; initial routing pending.
+- **Pending LM Approval** — awaiting Line Manager tier-1 decision; SLA 3 days.
+- **Pending HoD Approval** — escalated to Head of Department; either over tier-1 threshold or self-approval bypass.
+- **Pending Second Key** — HoD (Key 1) approved; awaiting Finance Director (Key 2) dual-approval.
+- **Key 2 Dispute** — Finance Director rejected; claim returned to HoD for reconsideration.
+- **Approved** *(terminal)* — fully approved; no further transitions unless resubmission edit.
+- **Rejected** *(terminal)* — rejected at LM or HoD tier; employee may edit and resubmit.
+- **Resubmitted** *(re-entrant)* — employee has edited a rejected claim; re-enters routing cycle.
+
+### Transitions
+
+| from_status | trigger | condition | to_status | actor_role | workflow_ref |
+|---|---|---|---|---|---|
+| "Draft" | form_submit | POPIA consent = true; all validations pass | "Submitted" | Employee | → WF-02 |
+| "Submitted" | form_submit | submitter holds Line Manager role | "Pending HoD Approval" | Employee | → WF-03.B |
+| "Submitted" | form_submit | submitter does not hold Line Manager role | "Pending LM Approval" | Employee | → WF-03.A |
+| "Pending LM Approval" | lm_approve | amount_zar ≤ tier-1 threshold | "Approved" | Line Manager | → WF-07.A |
+| "Pending LM Approval" | lm_approve | amount_zar > tier-1 threshold | "Pending HoD Approval" | Line Manager | → WF-07.B |
+| "Pending LM Approval" | lm_reject | always | "Rejected" | Line Manager | → WF-08 |
+| "Pending LM Approval" | sla_timer | days since submission ≥ 3 | "Pending HoD Approval" | SYSTEM | → WF-13 |
+| "Pending HoD Approval" | hod_approve | amount_zar > dual-approval threshold | "Pending Second Key" | Head of Department | → WF-09.B |
+| "Pending HoD Approval" | hod_approve | amount_zar ≤ dual-approval threshold | "Approved" | Head of Department | → WF-09.B |
+| "Pending HoD Approval" | hod_reject | always | "Rejected" | Head of Department | → WF-10 |
+| "Pending Second Key" | fd_approve | approver ≠ Key_1_Approver | "Approved" | Finance Director | → WF-11.B |
+| "Pending Second Key" | fd_approve | approver == Key_1_Approver (same-person block) | "Pending Second Key" | Finance Director | → WF-11.A |
+| "Pending Second Key" | fd_reject | always | "Key 2 Dispute" | Finance Director | → WF-12 |
+| "Key 2 Dispute" | hod_override | always | "Pending Second Key" | Head of Department | → WF-09.A |
+| "Rejected" | on_edit | employee edits and saves | "Resubmitted" | Employee | → WF-06 |
+| "Resubmitted" | on_edit | resubmitter holds Line Manager role | "Pending HoD Approval" | Employee | → WF-06 |
+| "Resubmitted" | on_edit | resubmitter does not hold Line Manager role | "Pending LM Approval" | Employee | → WF-06 |
+
+---
+
+## §11 Workflow Catalog
+
+### WF-01  expense_claim.on_load.auto_populate
+
+- Trigger: expense_claims.on_load (Employee | new record only)
+- Guard:   form is in "add" mode
+- Effect:  Auto-fills Employee Name from zoho.loginuser and Email from zoho.loginuserid to reduce data-entry friction and ensure correct submitter association with the claim record.
+- Audit:   —
+
+---
+
+### WF-02  expense_claim.on_validate
+
+- Trigger: expense_claims.on_validate (Employee | form submission before save)
+- Guard:   always
+- Effect:  Enforces eight hard-stop validation gates: (1) Expense_Date not in future; (2) Expense_Date not older than 90 days; (3) amount_zar > 0; (4) Supporting_Documents not null; (5) duplicate detection by date+amount+submitter; (6) claims >= R5000 require Full Tax Invoice VAT type; (7) POPIA_Consent must be true. If all pass: sets status = "Submitted", records Submission_Date, calculates Retention_Expiry_Date = current timestamp + 5 years.
+- Audit:   —
+
+---
+
+### WF-03.A  expense_claim.on_success — normal routing
+
+- Trigger: expense_claims.on_success (Employee | after successful form submission)
+- Guard:   submitter does NOT hold Line Manager role
+- Effect:  Routes the new claim to a Line Manager for tier-1 approval. Creates an approval_history record logging the initial submission. Notifies the Line Manager by email with claim details (employee name, amount).
+- Audit:   "Submitted"
+
+---
+
+### WF-03.B  expense_claim.on_success — self-approval bypass
+
+- Trigger: expense_claims.on_success (Employee | after successful form submission)
+- Guard:   submitter holds Line Manager role (self-approval prevention — King IV P1)
+- Effect:  Bypasses the Line Manager tier and routes the claim directly to the Head of Department. Creates an approval_history record noting the self-approval bypass. Notifies the HoD by email.
+- Audit:   "Submitted (Self-approval bypass)"
+
+---
+
+### WF-04  expense_claim.on_success.fill_shadows
+
+- Trigger: expense_claims.on_success (Employee | after successful form submission or edit)
+- Guard:   always
+- Effect:  Populates Department_Shadow and Client_Shadow with denormalized text copies of the linked department and client names respectively, to avoid nested lookups in reports and list views. Sets field to empty string if the linked record is null.
+- Audit:   —
+
+---
+
+### WF-05  expense_claim.on_success.generate_ref
+
+- Trigger: expense_claims.on_success (Employee | after successful form submission)
+- Guard:   always
+- Effect:  Auto-generates the human-friendly Claim_Reference in format "EXP-NNNN" by zero-padding the numeric claim_id to 4 digits (e.g., claim_id 5 → "EXP-0005"). This reference is used in all communications and notifications.
+- Audit:   —
+
+---
+
+### WF-06  expense_claim.on_edit
+
+- Trigger: expense_claims.on_edit (Employee | record edit/save on Rejected claim)
+- Guard:   input.status == "Resubmitted"
+- Effect:  Handles resubmission: increments Version, clears all dual-approval tracking fields (Key_1_Approver, Key_1_Timestamp, Key_2_Approver, Key_2_Timestamp, Requires_Dual_Approval), resets Submission_Date to now. Applies self-approval prevention: if resubmitter is Line Manager, routes to HoD; otherwise routes to Line Manager. Logs resubmission in approval_history and notifies the appropriate approver.
+- Audit:   "Resubmitted"
+
+---
+
+### WF-07.A  lm_approval.on_approve — under threshold (final approval)
+
+- Trigger: expense_claims approval process > Line Manager (Level 1 on_approve)
+- Guard:   input.amount_zar ≤ tier-1 max_amount_zar from approval_thresholds (fallback R999.99)
+- Effect:  Grants final LM approval. Sets status to "Approved". Auto-populates gl_code and ESG metadata via lookup on gl_accounts by expense category. Logs audit trail with threshold detail and GL code. Notifies employee of approval.
+- Audit:   "Approved (LM)"
+
+---
+
+### WF-07.B  lm_approval.on_approve — over threshold (escalate to HoD)
+
+- Trigger: expense_claims approval process > Line Manager (Level 1 on_approve)
+- Guard:   input.amount_zar > tier-1 max_amount_zar from approval_thresholds (fallback R999.99)
+- Effect:  Escalates claim to HoD. Sets status to "Pending HoD Approval". Auto-populates gl_code and ESG metadata via lookup. Logs audit trail with threshold explanation. Notifies HoD of pending claim. Logs a Warning audit entry if threshold config is missing.
+- Audit:   "Approved (LM)"
+
+---
+
+### WF-08  lm_approval.on_reject
+
+- Trigger: expense_claims approval process > Line Manager (Level 1 on_reject)
+- Guard:   always
+- Effect:  Sets claim status to "Rejected". Logs rejection with reason in approval_history. Notifies the employee with the rejection reason and instructions to edit and resubmit.
+- Audit:   "Rejected"
+
+---
+
+### WF-09.A  hod_approval.on_approve — dispute reconsideration (Key 2 override)
+
+- Trigger: expense_claims approval process > HoD (Level 1 on_approve)
+- Guard:   input.status == "Key 2 Dispute" (HoD is overriding Finance Director's rejection)
+- Effect:  HoD overrides the Finance Director's Key 2 rejection. Records Key 1 approval (Key_1_Approver, Key_1_Timestamp). Resets status to "Pending Second Key" for a new Key 2 cycle. Notifies the Finance Director of the HoD reconsideration. Logs audit with "Reconsidered (Key 1)".
+- Audit:   "Reconsidered (Key 1)"
+
+---
+
+### WF-09.B  hod_approval.on_approve — normal approval
+
+- Trigger: expense_claims approval process > HoD (Level 1 on_approve)
+- Guard:   input.status != "Key 2 Dispute" (standard HoD approval path)
+- Effect:  Reads dual-approval threshold from approval_thresholds. Auto-populates GL code and ESG metadata. If amount exceeds dual-threshold, records Key 1 approval and escalates to Finance Director (Pending Second Key). If under threshold, grants final approval (Approved) and notifies employee. In all paths logs full audit trail with GL and ESG context.
+- Audit:   "Approved (Key 1)" (if over-threshold); "Approved (HoD)" (if under-threshold)
+
+---
+
+### WF-10  hod_approval.on_reject
+
+- Trigger: expense_claims approval process > HoD (Level 1 on_reject)
+- Guard:   always
+- Effect:  Sets claim status to "Rejected". Logs rejection with reason in approval_history. Notifies the employee with rejection reason and instructions to edit and resubmit.
+- Audit:   "Rejected"
+
+---
+
+### WF-11.A  finance_approval.on_approve — same-person block
+
+- Trigger: expense_claims approval process > Finance Director (Level 3 on_approve)
+- Guard:   zoho.loginuser == input.Key_1_Approver (same-person conflict — King IV P7)
+- Effect:  Blocks approval with a governance alert. Resets status to "Pending Second Key". Logs a "Warning" audit record. Sends an inline governance alert to the admin (zoho.adminuserid) noting the blocked same-person dual-key attempt.
+- Audit:   "Warning"
+
+---
+
+### WF-11.B  finance_approval.on_approve — Key 2 approval
+
+- Trigger: expense_claims approval process > Finance Director (Level 3 on_approve)
+- Guard:   zoho.loginuser != input.Key_1_Approver (independence confirmed)
+- Effect:  Grants final dual-key approval. Populates Key_2_Approver and Key_2_Timestamp. Sets status to "Approved". Logs full approval_history entry with both Key 1 and Key 2 signatory details. Notifies employee of final dual-key approval.
+- Audit:   "Approved (Key 2)"
+
+---
+
+### WF-12  finance_approval.on_reject
+
+- Trigger: expense_claims approval process > Finance Director (Level 3 on_reject)
+- Guard:   always
+- Effect:  Creates a Key 2 Dispute state; does NOT immediately reject the claim. Routes claim back to HoD for reconsideration. Finance Director's rejection reason is captured. Notifies both HoD (dispute details and instructions) and employee (generic under-review notice). Logs audit record with "Rejected (Key 2)" and dispute reason.
+- Audit:   "Rejected (Key 2)"
+
+---
+
+### WF-13  sla_enforcement_daily
+
+- Trigger: sla_enforcement_daily (SYSTEM | scheduled daily)
+- Guard:   always (daily schedule; processes all qualifying claims each run)
+- Effect:  Monitors "Pending LM Approval" and "Pending Second Key" queues. For LM tier: if 2+ days since submission, sends reminder to LM (CC HoD); if 3+ days, auto-escalates to HoD (status → "Pending HoD Approval"), logs SLA Breach audit, notifies HoD. For Key 2 tier: if 2+ days since Key_1_Timestamp, sends reminder to Finance Director (CC admin); if 3+ days, escalates to admin/CEO for manual intervention with full context.
+- Audit:   "Escalated (SLA Breach)" (for LM 3-day breaches; actor = SYSTEM)
+
+---
+
+## §12 Custom APIs
+
+| name | method | params | returns | permissions | invoked_by | purpose |
+|---|---|---|---|---|---|---|
+| Get_Claim_Status | POST | claim_reference:Text(req) | status:Text; amount_zar:Decimal; department:Text; category:Text; submitted_date:Date; last_action:Text | — | external (REST) | Query claim status by reference number for external systems. |
+| Get_Dashboard_Summary | POST | department:Text(opt); date_from:Date(opt); date_to:Date(opt) | pending_count:Number; approved_count:Number; rejected_count:Number; total_amount_pending:Decimal; total_amount_approved:Decimal | — | external (REST) | Return aggregated claim statistics (pending/approved/rejected counts, amounts by dept). |
+| Get_ESG_Summary | POST | date_from:Date(opt); date_to:Date(opt); department:Text(opt) | total_carbon_kg:Decimal; claim_count:Number | — | external (REST) | Return carbon estimates and ESG category breakdowns for sustainability reporting. |
+| Get_SLA_Breaches | POST | threshold_days:Number(opt); department:Text(opt) | breached_count:Number; at_risk_count:Number | — | external (REST) | Return claims approaching or past SLA deadlines. |
+
+> All 4 Custom APIs are externally invoked via REST; no internal Deluge workflow invokes a Custom API (all §11 workflow Audit: lines reference approval_history entries only).
+
+---
+
+## §13 Email Templates
+
+| id | trigger_workflow_ref | to | cc | subject_template | variables | intent |
+|---|---|---|---|---|---|---|
+| submit_notify_lm | WF-03.A | line_manager | — | Expense Claim {{claim_id}} requires your approval | {{claim_id}}, {{Employee_Name1}}, {{amount_zar}} | Notify LM of new claim awaiting tier-1 approval. |
+| submit_self_approval_bypass | WF-03.B | hod | — | Expense Claim {{claim_id}} - Direct HoD Review | {{claim_id}} | Notify HoD of claim bypassing LM tier due to self-approval prevention. |
+| resubmit_notify_lm | WF-06 | line_manager | — | RESUBMITTED - Claim {{claim_id}} (v{{Version}}) | {{claim_id}}, {{Version}} | Notify LM of resubmitted claim requiring re-review. |
+| resubmit_self_approval_bypass | WF-06 | hod | — | RESUBMITTED - Claim {{claim_id}} (v{{Version}}) - Direct HoD Review | {{claim_id}}, {{Version}} | Notify HoD of resubmission bypassing LM due to self-approval prevention. |
+| lm_approved_final | WF-07.A | input.Email | — | Expense Claim {{claim_id}} - Approved | {{claim_id}}, {{amount_zar}} | Notify employee of final LM approval (under tier-1 threshold). |
+| lm_approved_escalate | WF-07.B | hod | — | Expense Claim {{claim_id}} - Requires HoD Approval | {{claim_id}}, {{amount_zar}} | Notify HoD that LM has approved but amount exceeds tier-1 threshold. |
+| lm_rejected | WF-08 | input.Email | — | Expense Claim {{claim_id}} - Rejected | {{claim_id}}, {{amount_zar}}, {{rejectReason}} | Notify employee of LM rejection with reason and resubmit instructions. |
+| hod_approved | WF-09.B | input.Email | — | Expense Claim {{claim_id}} - Final Approval | {{claim_id}}, {{amount_zar}} | Notify employee of HoD final approval (under dual-approval threshold). |
+| hod_rejected | WF-10 | input.Email | — | Expense Claim {{claim_id}} - Rejected by HoD | {{claim_id}}, {{amount_zar}}, {{rejectReason}} | Notify employee of HoD rejection with reason and resubmit instructions. |
+| sla_escalation | WF-13 | hod | — | SLA BREACH - Claim {{claim_id}} escalated | {{claim_id}}, {{amount_zar}} | Notify HoD that LM failed to act within 3 days; SLA auto-escalation occurred. |
+| sla_reminder | WF-13 | line_manager | hod | REMINDER - Claim {{claim_id}} awaiting approval | {{claim_id}} | Remind LM of pending approval at 2-day mark; HoD CC'd as warning. |
+| key1_approved_dual_required | WF-09.B | finance_director | — | TWO-KEY APPROVAL - Claim {{claim_id}} requires your sign-off | {{claim_id}}, {{amount_zar}} | Notify Finance Director that HoD (Key 1) has approved and Key 2 sign-off is required. |
+| key2_approved_final | WF-11.B | input.Email | — | Expense Claim {{claim_id}} - Final Approval (Two-Key) | {{claim_id}}, {{amount_zar}} | Notify employee of final dual-key approval by Finance Director (Key 2). |
+| key2_rejected_dispute | WF-12 | hod | — | TWO-KEY DISPUTE - Claim {{claim_id}} rejected by Key 2 | {{claim_id}}, {{amount_zar}}, {{rejectReason}} | Notify HoD of Finance Director's Key 2 rejection for reconsideration. |
+| key2_dispute_notify_employee | WF-12 | input.Email | — | Expense Claim {{claim_id}} - Under Review | {{claim_id}}, {{amount_zar}} | Notify employee that claim is under additional review (Key 2 dispute). |
+| key1_reconsider_override | WF-09.A | finance_director | — | TWO-KEY RECONSIDERATION - Claim {{claim_id}} re-approved by Key 1 | {{claim_id}}, {{amount_zar}} | Notify Finance Director that HoD has overridden Key 2 rejection; new Key 2 cycle begins. |
+| key2_sla_reminder | WF-13 | finance_director | admin | REMINDER (Key 2) - Claim {{claim_id}} awaiting approval | {{claim_id}} | Remind Finance Director of pending Key 2 approval at 2-day mark; admin CC'd. |
+| key2_sla_escalation | WF-13 | zoho.adminuserid | — | SLA BREACH (Key 2) - Claim {{claim_id}} escalated | {{claim_id}}, {{amount_zar}} | Notify admin/CEO that Finance Director failed 3-day SLA; manual intervention required. |
+| INLINE-01 | WF-11.A | zoho.adminuserid | — | GOVERNANCE ALERT - Claim {{claim_id}} - Same-Person Key 2 Blocked | {{claim_id}} | Alert admin of same-person dual-key attempt; no named template — inline sendmail. |
+
+---
+
+## §14 Business Rules Index
+
+**BR-001** (governance) No user in the Line Manager role may approve their own submitted claim — enforced_by: WF-03.B, WF-06
+
+**BR-002** (governance) Line Manager submitters are automatically routed to HoD tier to prevent self-approval (King IV P1) — enforced_by: WF-03.B, WF-06
+
+**BR-003** (governance) All expense claim state transitions are recorded in approval_history with actor, timestamp, and context to ensure complete audit traceability — enforced_by: WF-03.A, WF-03.B, WF-06, WF-07.A, WF-07.B, WF-08, WF-09.A, WF-09.B, WF-10, WF-11.A, WF-11.B, WF-12, WF-13
+
+**BR-004** (governance) The approval_history form must be configured as append-only (no Edit/Delete/Duplicate at menu level) to prevent post-facto tampering — enforced_by: role_permission
+
+**BR-005** (governance) The Key 2 approver (Finance Director) must not be the same person as Key 1 approver (HoD); same-person attempt is blocked and logged (King IV P7) — enforced_by: WF-11.A
+
+**BR-006** (compliance) At least one supporting document (receipt or invoice) must be attached to satisfy SARS S11(a) substantiation requirements — enforced_by: WF-02 (form_validation)
+
+**BR-007** (compliance) Claims with amount_zar >= R5000 require VAT_Invoice_Type = "Full Tax Invoice - R5000 and above" per the SARS VAT Act — enforced_by: WF-02 (form_validation)
+
+**BR-008** (compliance) POPIA_Consent must be true before claim submission is accepted — enforced_by: WF-02 (form_validation)
+
+**BR-009** (compliance) Retention_Expiry_Date must be set to Submission_Date + 5 years per SARS Tax Administration Act S29 — enforced_by: WF-02
+
+**BR-010** (compliance) Expense_Date must not be older than 90 days from current date at submission — enforced_by: WF-02 (form_validation)
+
+**BR-011** (financial) amount_zar must be greater than zero — enforced_by: WF-02 (form_validation)
+
+**BR-012** (financial) Expense_Date must not be in the future — enforced_by: WF-02 (form_validation)
+
+**BR-013** (financial) Claims within the tier-1 threshold (default R999.99) receive final approval from the Line Manager; claims above are escalated to HoD — enforced_by: WF-07.A, WF-07.B, config
+
+**BR-014** (financial) Claims exceeding the dual-approval threshold (default R5000.00) require both Key 1 (HoD) and Key 2 (Finance Director) authorization — enforced_by: WF-09.B, config
+
+**BR-015** (financial) GL code is auto-assigned based on expense category lookup during LM or HoD approval; employees do not manually set GL code — enforced_by: WF-07.A, WF-07.B, WF-09.B, role_permission
+
+**BR-016** (sla) Claims awaiting LM approval for 2 days receive a reminder email to the LM (CC HoD) — enforced_by: WF-13
+
+**BR-017** (sla) Claims awaiting LM approval for 3 days are automatically escalated to HoD status (SLA auto-escalation) — enforced_by: WF-13
+
+**BR-018** (sla) Claims awaiting Key 2 (Finance Director) approval for 3 days escalate to admin/CEO for manual intervention — enforced_by: WF-13
+
+**BR-019** (data_integrity) Duplicate claims (same employee, expense date, and amount) trigger a warning at submission but do not block the claim — enforced_by: WF-02
+
+**BR-020** (data_integrity) Parent_Claim_ID is a self-referential pick list on expense_claims used to link resubmitted claims to their parent record; the self-ref edge must be configured as pick list filtered to expense_claims.ID — enforced_by: WF-06, form_validation
+
+**BR-021** (data_integrity) Version number increments on every resubmission; dual-approval state is fully reset so the new version cycles through fresh approval routing — enforced_by: WF-06
+
+**BR-022** (compliance) ESG/carbon reporting is advisory only until the five referenced fields (gl_accounts.ESG_Category, gl_accounts.Carbon_Factor, gl_accounts.GRI_Indicator, expense_claims.ESG_Category, expense_claims.Estimated_Carbon_KG) are added to their respective forms; current workflow writes silently no-op — enforced_by: advisory (see §15)
+
+**BR-023** (ui) approval_history reports (approval_history_Report, Audit_Trail) must have menu permissions excluding Edit/Delete/Duplicate/Import/Export/Print to enforce append-only posture — enforced_by: role_permission
+
+**BR-024** (ui) Shadow fields (Department_Shadow, Client_Shadow), retention expiry, dual-key tracking fields, and Parent_Claim_ID must be hidden from all non-admin roles — enforced_by: role_permission
+
+**BR-025** (ui) External callers invoking Custom APIs must authenticate via Zoho OAuth; API permissions are declared in Creator's microservices layer — enforced_by: config
+
+**BR-026** (compliance) Organization-type and ESG toggle configuration (compliance_config) is advisory only until the compliance_config form is added to the .ds; dependent rules use config (compliance_config advisory) traceability tag — enforced_by: config (compliance_config advisory)
+
+---
+
+## §15 Out of Scope / Known Discrepancies
+
+1. [EXCLUSION] Widgets: 0 widgets are declared in forgeds.yaml; do NOT create any widget components.
+
+2. [EXCLUSION] Subforms: 0 subform relationships exist in the .ds; do NOT add any subforms.
+
+3. [EXCLUSION] Deluge source code: no Deluge script text is included in this BRD by design. Reconstruct from §11 plain-English behavioral specs.
+
+4. [EXCLUSION] Portal role field-level CRUD: insufficient data to specify at field granularity; apply Creator default portal permissions.
+
+5. [EXCLUSION] Seed data: approval_thresholds.json, clients.json, departments.json, gl_accounts.json reference data exists but is not embedded in this BRD. Load separately.
+
+6. [DISCREPANCY] compliance_config form: field-descriptions YAML mentions compliance_config with 4 fields (Config_Key, Config_Value, Description, Active); this form is ABSENT from the .ds export. Do NOT create this form. Treat compliance_config-dependent rules as advisory only until a .ds export confirms the schema. Any §14 BR referencing organization-type/ESG toggles must tag enforced_by: config (compliance_config advisory) to preserve traceability (see BR-026).
+
+7. [DISCREPANCY] Schema-workflow divergence: workflows WF-07 and WF-09 read gl_accounts.ESG_Category, gl_accounts.Carbon_Factor, and gl_accounts.GRI_Indicator, and WF-09 writes expense_claims.ESG_Category and expense_claims.Estimated_Carbon_KG — but NONE of these 5 fields are declared in the .ds schema for their respective forms. Treat these workflow reads/writes as advisory (they silently no-op in Creator until the fields are added). Do NOT add any of these 5 fields to §6.3 or §6.5.
+
+8. [DISCREPANCY] Governance Alert email: WF-11.A contains an inline ad-hoc sendmail block (subject: "GOVERNANCE ALERT - Claim {claim_id} - Same-Person Key 2 Blocked") that is NOT a named template in email-templates.yaml. It is documented in §13 as INLINE-01 with id = INLINE-01 to distinguish it from the 18 named templates.
+
+9. [DISCREPANCY] 3c-config.md summary states 19 email templates; authoritative count from email-templates.yaml is 18 named templates. The 19th was a miscounting artifact; INLINE-01 is the governance alert inline sendmail, not a 19th named template.
+
+10. [EXCLUSION] Pivot table internal autoview reference: Expense_Summary is built on "Autoview_1775232194200_expense_claims" — this is a Creator-internal artifact. Do NOT create it manually; Creator generates it automatically when the pivot report is configured.
+
+11. [EXCLUSION] Named types (0 declared), external integrations, Zoho Analytics connectors: none declared in forgeds.yaml; do NOT add them.
+
+---
+
+## §16 Reconstruction Checklist
+
+1. MUST have exactly 6 forms: departments, clients, gl_accounts, approval_thresholds, expense_claims, approval_history.
+
+2. MUST have exactly 53 fields across all forms (departments: 3, clients: 3, gl_accounts: 7, approval_thresholds: 8, expense_claims: 27, approval_history: 5).
+
+3. MUST have exactly 5 lookup edges (see §5 ER Skeleton), including 1 self-referential (expense_claims.Parent_Claim_ID → expense_claims).
+
+4. MUST have 0 subforms.
+
+5. MUST have exactly 11 reports: 9 list, 1 kanban (gl_accounts_by_expense_category), 1 pivot/summary (Expense_Summary).
+
+6. MUST have exactly 9 expense_claims.status values: Draft, Submitted, Pending LM Approval, Pending HoD Approval, Pending Second Key, Key 2 Dispute, Approved, Rejected, Resubmitted.
+
+7. MUST have exactly 6 named picklists (see §7): action_1, expense_category_claim, expense_category_gl, Risk_Level, status, VAT_Invoice_Type. (Employee_Name1_prefix is an inline sub-component, NOT a named picklist.)
+
+8. MUST have exactly 7 internal roles: Employee, Line Manager, Head of Department, Finance Director, Finance Accountant, System Administrator, Developer. Plus 3 portal roles represented as 1 combined row in §9.1: Client Representative, Vendor, Customer.
+
+9. MUST have exactly 13 Deluge workflows (WF-01 through WF-13); multi-branch scripts have sibling .A/.B sub-IDs but count as 1 workflow each. §11 contains exactly 17 H3 blocks.
+
+10. MUST have exactly 4 Custom APIs: Get_Claim_Status, Get_Dashboard_Summary, Get_ESG_Summary, Get_SLA_Breaches.
+
+11. MUST have exactly 18 named email templates PLUS 1 inline sendmail block (INLINE-01) in the finance_approval Level-3 on_approve actions block with subject "GOVERNANCE ALERT - Claim {claim_id} - Same-Person Key 2 Blocked". Verify template names match §11 workflow email references.
+
+12. MUST have 0 widgets.
+
+13. MUST configure approval_history reports (approval_history_Report, Audit_Trail) with menu permissions excluding Edit/Delete/Duplicate/Import/Export/Print; the form itself may retain a default Edit action button (menu-level enforcement suffices for append-only posture; the .ds form declares both on_add and on_edit action hooks).
+
+14. MUST apply conditional formatting to expense_claims_Report status column using exact hex colors from .ds: Approved = #1bbc9b, Rejected = #e84c3d, Pending states = #bd588b. Additional pending-variant colors: #765f89, #107c91 as declared in .ds.
+
+15. MUST auto-generate Claim_Reference in EXP-NNNN format via WF-05.
+
+16. MUST set Retention_Expiry_Date = Submission_Date + 5 years via WF-02.
+
+17. MUST have exactly 5 required (`must have`) fields — all on expense_claims: Employee_Name1, Email, Submission_Date, Claim_Reference, Supporting_Documents.
+
+18. MUST have `approval_history.action_1` picklist with exactly 12 values (in order): Submitted, Submitted (Self-approval bypass), Approved (LM), Approved (HoD), Approved (Key 1), Approved (Key 2), Rejected, Rejected (Key 2), Reconsidered (Key 1), Escalated (SLA Breach), Resubmitted, Warning.
+
+19. MUST have CC recipients on exactly 2 named email templates: sla_reminder (cc = hod), key2_sla_reminder (cc = admin). All other templates cc = —.
+
+20. All monetary number fields (amount_zar, max_amount_zar, Dual_Threshold_ZAR) MUST be of type `number` with 2 decimal places. Do NOT use a currency field type. ZAR formatting is applied post-import. Do NOT drop these fields — they are load-bearing for all approval routing logic.
