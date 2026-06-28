@@ -44,3 +44,6 @@ exports/csv/
 dist/
 build/
 *.zip
+
+# Machine-local Claude Code config (host-specific permissions/mode; never share) — HK-FILE / settings.local
+.claude/settings.local.json

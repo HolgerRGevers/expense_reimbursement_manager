@@ -1,0 +1,3 @@
+# Normalize line endings: store LF in the repo, check out LF on every platform.
+# Guards against CRLF/LF phantom-drift on this Windows + OneDrive host (HK-PATH-003).
+* text=auto eol=lf
